@@ -52,7 +52,7 @@ export default function Login() {
             <img
               src="/image.png"
               alt="المركز العالمي"
-              className="w-32 h-32 mx-auto object-contain mb-4"
+              className="w-32 h-32 mx-auto object-contain mb-4 rounded-md" 
             />
             <h1 className="text-3xl font-bold text-stone-800">المركز العالمي</h1>
           </div>
