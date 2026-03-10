@@ -363,7 +363,7 @@ export default function Students() {
                   min="0"
                   max="10"
                   value={formData.activity}
-                  onChange={(e) => setFormData({ ...formData, activity: parseInt(e.target.value) || 0 })}
+                  onChange={(e) => setFormData({ ...formData, activity: parseInt(e.target.value)  })}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
               </div>
@@ -378,7 +378,7 @@ export default function Students() {
                   min="0"
                   max="30"
                   value={formData.oral}
-                  onChange={(e) => setFormData({ ...formData, oral: parseInt(e.target.value) || 0 })}
+                  onChange={(e) => setFormData({ ...formData, oral: parseInt(e.target.value) })}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
               </div>
@@ -393,7 +393,7 @@ export default function Students() {
                   min="0"
                   max="60"
                   value={formData.written}
-                  onChange={(e) => setFormData({ ...formData, written: parseInt(e.target.value) || 0 })}
+                  onChange={(e) => setFormData({ ...formData, written: parseInt(e.target.value)  })}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
               </div>
