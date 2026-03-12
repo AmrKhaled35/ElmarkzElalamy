@@ -13,8 +13,8 @@ import { studentsAPI, levelsAPI } from "../services/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { FileDown } from "lucide-react";
 import jsPDF from "jspdf";
-import amiriRegular from "../fonts/Amiri-Regular-normal.js";
-import amiriBold from "../fonts/Amiri-Bold-normal.js";
+import amiriRegular from "../fonts/AmiriRegularnormal.js";
+import amiriBold from "../fonts/AmiriBoldnormal.js";
 import { useRef } from "react";
 import autoTable from "jspdf-autotable";
 
