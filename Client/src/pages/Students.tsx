@@ -355,7 +355,7 @@ export default function Students() {
 
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-2">
-                  درجة النشاط (من 10)
+                  درجة النشاط (من 40)
                 </label>
                 <input
                   type="number"
@@ -370,7 +370,7 @@ export default function Students() {
 
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-2">
-                  درجة الشفوي (من 30)
+                  درجة الشفوي (من 80)
                 </label>
                 <input
                   type="number"
@@ -385,7 +385,7 @@ export default function Students() {
 
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-2">
-                  درجة التحريري (من 60)
+                  درجة التحريري (من 120)
                 </label>
                 <input
                   type="number"
