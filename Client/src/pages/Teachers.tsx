@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Plus, User, Mail, Trash2 } from 'lucide-react';
-import Layout from '../components/Layout';
-import { usersAPI } from '../services/api';
-import ConfirmModal from '../components/ConfirmModal';
+import { useState, useEffect } from "react";
+import { Plus, User, Mail, Trash2 } from "lucide-react";
+import Layout from "../components/Layout";
+import { usersAPI } from "../services/api";
 
 interface Teacher {
   id: number;
@@ -11,6 +10,22 @@ interface Teacher {
   role: string;
   created_at: string;
 }
+const translateError = (message: string) => {
+
+  if (message.includes("password is too short")) {
+    return "كلمة المرور قصيرة جداً، يجب أن تحتوي على 8 أحرف على الأقل";
+  }
+
+  if (message.includes("user with this email already exists")) {
+    return "هذا البريد الإلكتروني مستخدم بالفعل";
+  }
+
+  if (message.includes("This field is required")) {
+    return "هذا الحقل مطلوب";
+  }
+
+  return message;
+};
 
 export default function Teachers() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -19,14 +34,15 @@ export default function Teachers() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    password: '',
-    role: 'teacher',
+    full_name: "",
+    email: "",
+    password: "",
+    role: "teacher",
   });
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deletePassword, setDeletePassword] = useState('');
+  const [deletePassword, setDeletePassword] = useState("");
+  const [errors, setErrors] = useState<any>({});
 
   useEffect(() => {
     loadTeachers();
@@ -35,10 +51,12 @@ export default function Teachers() {
   const loadTeachers = async () => {
     try {
       const response = await usersAPI.getAll();
-      const teachersList = response.data.results.filter((u: Teacher) => u.role !== 'admin');
+      const teachersList = response.data.results.filter(
+        (u: Teacher) => u.role !== "admin"
+      );
       setTeachers(teachersList);
     } catch (error) {
-      console.error('Failed to load teachers:', error);
+      console.error("Failed to load teachers:", error);
     } finally {
       setLoading(false);
     }
@@ -46,13 +64,21 @@ export default function Teachers() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     try {
+      setErrors({});
+
       await usersAPI.create(formData);
+
       setShowModal(false);
-      setFormData({ full_name: '', email: '', password: '', role: 'teacher' });
+      setFormData({ full_name: "", email: "", password: "", role: "teacher" });
       loadTeachers();
-    } catch (error) {
-      console.error('Failed to create teacher:', error);
+    } catch (error: any) {
+      if (error.response && error.response.data) {
+        setErrors(error.response.data);
+      }
+
+      console.error("Failed to create teacher:", error);
     }
   };
 
@@ -63,16 +89,16 @@ export default function Teachers() {
 
   const confirmDelete = async () => {
     if (!deleteId) return;
-  
+
     try {
       await usersAPI.delete(deleteId, deletePassword);
       loadTeachers();
     } catch (error) {
-      console.error('Failed to delete teacher:', error);
+      console.error("Failed to delete teacher:", error);
     }
-  
+
     setShowDeleteModal(false);
-    setDeletePassword('');
+    setDeletePassword("");
   };
 
   const cancelDelete = () => {
@@ -100,8 +126,12 @@ export default function Teachers() {
       {/* Header Section - Responsive Flex */}
       <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-stone-800 mb-2">المعلمون</h1>
-          <p className="text-sm md:text-base text-stone-600">إدارة جميع المعلمين والمدربين</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-stone-800 mb-2">
+            المعلمون
+          </h1>
+          <p className="text-sm md:text-base text-stone-600">
+            إدارة جميع المعلمين والمدربين
+          </p>
         </div>
         <button
           onClick={() => setShowModal(true)}
@@ -115,7 +145,9 @@ export default function Teachers() {
       {teachers.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-lg border-2 border-dashed border-stone-300 px-4">
           <User className="w-16 h-16 mx-auto text-stone-400 mb-4" />
-          <h3 className="text-xl font-medium text-stone-800 mb-2">لا يوجد معلمون حتى الآن</h3>
+          <h3 className="text-xl font-medium text-stone-800 mb-2">
+            لا يوجد معلمون حتى الآن
+          </h3>
           <p className="text-stone-600 mb-6">ابدأ بإضافة أول معلم</p>
           <button
             onClick={() => setShowModal(true)}
@@ -132,10 +164,18 @@ export default function Teachers() {
             <table className="w-full">
               <thead className="bg-stone-50 border-b border-stone-200">
                 <tr>
-                  <th className="text-right px-6 py-4 text-sm font-medium text-stone-700">الاسم</th>
-                  <th className="text-right px-6 py-4 text-sm font-medium text-stone-700">البريد الإلكتروني</th>
-                  <th className="text-right px-6 py-4 text-sm font-medium text-stone-700">الدور</th>
-                  <th className="text-right px-6 py-4 text-sm font-medium text-stone-700">الإجراءات</th>
+                  <th className="text-right px-6 py-4 text-sm font-medium text-stone-700">
+                    الاسم
+                  </th>
+                  <th className="text-right px-6 py-4 text-sm font-medium text-stone-700">
+                    البريد الإلكتروني
+                  </th>
+                  <th className="text-right px-6 py-4 text-sm font-medium text-stone-700">
+                    الدور
+                  </th>
+                  <th className="text-right px-6 py-4 text-sm font-medium text-stone-700">
+                    الإجراءات
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-200">
@@ -146,7 +186,9 @@ export default function Teachers() {
                         <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center shrink-0">
                           <User className="w-5 h-5 text-amber-700" />
                         </div>
-                        <span className="font-medium text-stone-800">{teacher.full_name}</span>
+                        <span className="font-medium text-stone-800">
+                          {teacher.full_name}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-stone-600">
@@ -192,7 +234,9 @@ export default function Teachers() {
                       <User className="w-5 h-5 text-amber-700" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-stone-800">{teacher.full_name}</h4>
+                      <h4 className="font-bold text-stone-800">
+                        {teacher.full_name}
+                      </h4>
                       <p className="text-xs text-stone-500">معلم</p>
                     </div>
                   </div>
@@ -223,40 +267,69 @@ export default function Teachers() {
       {showModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
           <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-            <h2 className="text-2xl font-bold text-stone-800 mb-6">إضافة معلم جديد</h2>
+            <h2 className="text-2xl font-bold text-stone-800 mb-6">
+              إضافة معلم جديد
+            </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">الاسم الكامل</label>
+                <label className="block text-sm font-medium text-stone-700 mb-2">
+                  الاسم الكامل
+                </label>
                 <input
                   type="text"
                   required
                   value={formData.full_name}
-                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, full_name: e.target.value })
+                  }
                   className="w-full px-4 py-3 md:py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none"
                   placeholder="أدخل الاسم الكامل"
                 />
+                {errors.full_name && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {translateError (errors.full_name[0])}
+                  </p>
+                )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">البريد الإلكتروني</label>
+                <label className="block text-sm font-medium text-stone-700 mb-2">
+                  البريد الإلكتروني
+                </label>
                 <input
                   type="email"
                   required
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   className="w-full px-4 py-3 md:py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none"
                   placeholder="example@mail.com"
                 />
+                {errors.email && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {translateError(errors.email[0])}
+                  </p>
+                )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">كلمة المرور</label>
+                <label className="block text-sm font-medium text-stone-700 mb-2">
+                  كلمة المرور
+                </label>
                 <input
                   type="password"
                   required
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
                   className="w-full px-4 py-3 md:py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none"
                   placeholder="أدخل كلمة المرور"
                 />
+                {errors.password && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {translateError(errors.password[0])}
+                  </p>
+                )}
               </div>
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <button
@@ -269,7 +342,12 @@ export default function Teachers() {
                   type="button"
                   onClick={() => {
                     setShowModal(false);
-                    setFormData({ full_name: '', email: '', password: '', role: 'teacher' });
+                    setFormData({
+                      full_name: "",
+                      email: "",
+                      password: "",
+                      role: "teacher",
+                    });
                   }}
                   className="flex-1 bg-stone-200 text-stone-700 py-3 md:py-2 rounded-lg hover:bg-stone-300 transition order-2 sm:order-1"
                 >
@@ -285,15 +363,21 @@ export default function Teachers() {
       {showDetailModal && selectedTeacher && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
           <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
-            <h2 className="text-xl font-bold text-stone-800 mb-6 border-b pb-2">تفاصيل المعلم</h2>
+            <h2 className="text-xl font-bold text-stone-800 mb-6 border-b pb-2">
+              تفاصيل المعلم
+            </h2>
             <div className="space-y-4">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center shrink-0">
                   <User className="w-8 h-8 text-amber-700" />
                 </div>
                 <div className="overflow-hidden">
-                  <h3 className="text-lg font-bold text-stone-800 truncate">{selectedTeacher.full_name}</h3>
-                  <p className="text-sm text-stone-600 truncate">{selectedTeacher.email}</p>
+                  <h3 className="text-lg font-bold text-stone-800 truncate">
+                    {selectedTeacher.full_name}
+                  </h3>
+                  <p className="text-sm text-stone-600 truncate">
+                    {selectedTeacher.email}
+                  </p>
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-3">
@@ -304,7 +388,9 @@ export default function Teachers() {
                 <div className="bg-stone-50 p-4 rounded-lg">
                   <p className="text-xs text-stone-600 mb-1">تاريخ الإضافة</p>
                   <p className="font-medium text-stone-800">
-                    {new Date(selectedTeacher.created_at).toLocaleDateString('ar-EG')}
+                    {new Date(selectedTeacher.created_at).toLocaleDateString(
+                      "ar-EG"
+                    )}
                   </p>
                 </div>
               </div>
@@ -318,43 +404,44 @@ export default function Teachers() {
           </div>
         </div>
       )}
-    {showDeleteModal && (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]">
-    <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
-      <h2 className="text-xl font-bold text-stone-800 mb-4">
-        تأكيد حذف المعلم
-      </h2>
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
+            <h2 className="text-xl font-bold text-stone-800 mb-4">
+              تأكيد حذف المعلم
+            </h2>
 
-      <p className="text-stone-600 mb-4">
-          يرجى إدخال كلمة المرور للمتابعة
-      </p>
+            <p className="text-stone-600 mb-4">
+              يرجى إدخال كلمة المرور للمتابعة
+            </p>
 
-      <input
-        type="password"
-        value={deletePassword}
-        onChange={(e) => setDeletePassword(e.target.value)}
-        placeholder="أدخل كلمة المرور"
-        className="w-full px-4 py-3 border border-stone-300 rounded-lg mb-4 focus:ring-2 focus:ring-red-500 outline-none"
-      />
+            <input
+              type="password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              placeholder="أدخل كلمة المرور"
+              className="w-full px-4 py-3 border border-stone-300 rounded-lg mb-4 focus:ring-2 focus:ring-red-500 outline-none"
+            />
 
-      <div className="flex gap-3">
-        <button
-          onClick={confirmDelete}
-          className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
-        >
-          تأكيد الحذف
-        </button>
+            <div className="flex gap-3">
+              <button
+                onClick={confirmDelete}
+                className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+              >
+                تأكيد الحذف
+              </button>
 
-        <button
-          onClick={cancelDelete}
-          className="flex-1 bg-stone-200 text-stone-700 py-2 rounded-lg hover:bg-stone-300"
-        >
-          إلغاء
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+              <button
+                onClick={cancelDelete}
+                className="flex-1 bg-stone-200 text-stone-700 py-2 rounded-lg hover:bg-stone-300"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }
+
