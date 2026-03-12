@@ -26,6 +26,7 @@ export default function Teachers() {
   });
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
 
   useEffect(() => {
     loadTeachers();
@@ -62,14 +63,16 @@ export default function Teachers() {
 
   const confirmDelete = async () => {
     if (!deleteId) return;
+  
     try {
-      await usersAPI.delete(deleteId);
+      await usersAPI.delete(deleteId, deletePassword);
       loadTeachers();
     } catch (error) {
       console.error('Failed to delete teacher:', error);
     }
+  
     setShowDeleteModal(false);
-    setDeleteId(null);
+    setDeletePassword('');
   };
 
   const cancelDelete = () => {
@@ -315,14 +318,43 @@ export default function Teachers() {
           </div>
         </div>
       )}
+    {showDeleteModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]">
+    <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
+      <h2 className="text-xl font-bold text-stone-800 mb-4">
+        تأكيد حذف المعلم
+      </h2>
 
-      <ConfirmModal
-        isOpen={showDeleteModal}
-        title="حذف المعلم"
-        message="هل أنت متأكد أنك تريد حذف هذا المعلم؟"
-        onConfirm={confirmDelete}
-        onCancel={cancelDelete}
+      <p className="text-stone-600 mb-4">
+          يرجى إدخال كلمة المرور للمتابعة
+      </p>
+
+      <input
+        type="password"
+        value={deletePassword}
+        onChange={(e) => setDeletePassword(e.target.value)}
+        placeholder="أدخل كلمة المرور"
+        className="w-full px-4 py-3 border border-stone-300 rounded-lg mb-4 focus:ring-2 focus:ring-red-500 outline-none"
       />
+
+      <div className="flex gap-3">
+        <button
+          onClick={confirmDelete}
+          className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+        >
+          تأكيد الحذف
+        </button>
+
+        <button
+          onClick={cancelDelete}
+          className="flex-1 bg-stone-200 text-stone-700 py-2 rounded-lg hover:bg-stone-300"
+        >
+          إلغاء
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </Layout>
   );
 }

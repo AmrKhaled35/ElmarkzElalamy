@@ -81,8 +81,12 @@ export const usersAPI = {
   update: (id: number, data: { full_name?: string; role?: string }) =>
     api.patch(`/api/auth/users/${id}/`, data),
 
-  delete: (id: number) =>
-    api.delete(`/api/auth/users/${id}/`),
+  delete: (id: number, password: string) =>
+    api.delete(`/api/auth/users/${id}/`, {
+      data: {
+        current_password: password
+      }
+    }),
 
   getById: (id: number) =>
     api.get(`/api/auth/users/${id}/`),
