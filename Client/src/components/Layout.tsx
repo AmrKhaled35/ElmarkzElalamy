@@ -111,10 +111,7 @@ export default function Layout({ children }: LayoutProps) {
               </nav>
             </div>
             <div className="flex items-center gap-4">
-              <div
-                className="hidden cursor-pointer sm:flex items-center gap-3 px-4 py-2 bg-stone-50 border border-stone-100 rounded-2xl"
-                onClick={() => setIsPasswordModalOpen(true)}
-              >
+              <div className="hidden cursor-pointer sm:flex items-center gap-3 px-4 py-2 bg-stone-50 border border-stone-100 rounded-2xl">
                 <div className="text-right">
                   <p className="text-sm font-bold text-stone-800 leading-none">
                     {user?.full_name}
@@ -128,6 +125,12 @@ export default function Layout({ children }: LayoutProps) {
                 </div>
               </div>
               <div className="hidden md:block w-px h-8 bg-stone-200 mx-2"></div>
+              <button
+                onClick={() => setIsPasswordModalOpen(true)}
+                className="hidden md:flex items-center gap-2 px-4 py-2.5 text-stone-500 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all duration-300 font-bold text-sm"
+              >
+                تغيير كلمة المرور
+              </button>
               <button
                 onClick={handleLogout}
                 className="hidden md:flex items-center gap-2 px-4 py-2.5 text-stone-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300 font-bold text-sm"
@@ -149,10 +152,7 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </div>
         {isMobileMenuOpen && (
-          <div
-            className="md:hidden cursor-pointer bg-white border-t border-stone-100 shadow-2xl animate-in slide-in-from-top-4 duration-300"
-            onClick={() => setIsPasswordModalOpen(true)}
-          >
+          <div className="md:hidden cursor-pointer bg-white border-t border-stone-100 shadow-2xl animate-in slide-in-from-top-4 duration-300">
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-4 p-4 bg-stone-50 rounded-2xl border border-stone-100 sm:hidden">
                 <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 shadow-inner">
@@ -196,6 +196,16 @@ export default function Layout({ children }: LayoutProps) {
                     <span>المعلمون</span>
                   </Link>
                 )}
+                <button
+                  onClick={() => {
+                    setIsPasswordModalOpen(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-5 py-4 bg-amber-600 text-white font-bold text-sm rounded-xl shadow-md hover:bg-amber-700 hover:scale-105 transition-all duration-300"
+                >
+                  <UserIcon className="w-5 h-5" />
+                  <span>تغيير كلمة المرور</span>
+                </button>
               </nav>
 
               <button
