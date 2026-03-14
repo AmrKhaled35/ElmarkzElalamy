@@ -176,7 +176,7 @@ export default function Levels() {
           className="flex items-center gap-2 text-stone-600 hover:text-stone-800 mb-4"
         >
           <ArrowRight className="w-5 h-5" />
-          <span>العودة إلى الكورسات</span>
+          <span>العودة إلى الدورات</span>
         </button>
 
         <div className="flex justify-between items-center mb-8">
@@ -250,28 +250,39 @@ export default function Levels() {
                   </p>
                 )}
 
-                <div className="flex gap-2 mt-4 pt-4 border-t border-stone-200">
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      openEditModal(level);
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-stone-600 hover:bg-white rounded-lg transition"
+                {user?.role === "admin" ? (
+                  <div className="flex gap-2 mt-4 pt-4 border-t border-stone-200">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        openEditModal(level);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-stone-600 hover:bg-white rounded-lg transition"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                      <span className="text-sm">تعديل</span>
+                    </button>
+
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleDelete(level.id);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span className="text-sm">حذف</span>
+                    </button>
+                  </div>
+                ) : (
+                  <Link
+                    to={`/levels/${level.id}/students`}
+                    className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-stone-200 text-amber-700 hover:bg-amber-50 rounded-lg transition px-3 py-2"
                   >
-                    <Edit2 className="w-4 h-4" />
-                    <span className="text-sm">تعديل</span>
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleDelete(level.id);
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span className="text-sm">حذف</span>
-                  </button>
-                </div>
+                    <BookOpen className="w-4 h-4" />
+                    <span className="text-sm">عرض المستوى</span>
+                  </Link>
+                )}
               </div>
             </Link>
           ))}
