@@ -34,6 +34,7 @@ export default function Students() {
   const { levelId } = useParams<{ levelId: string }>();
   const navigate = useNavigate();
   const [students, setStudents] = useState<Student[]>([]);
+  const [studentPDF, setStudentPDF] = useState<Student[] | null>(null);
   const [levelName, setLevelName] = useState("");
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -54,6 +55,7 @@ export default function Students() {
   useEffect(() => {
     loadStudents();
     loadLevel();
+    loadStudentsPDF();
   }, [levelId]);
 
   const loadLevel = async () => {
@@ -80,6 +82,20 @@ export default function Students() {
     }
   };
 
+  const loadStudentsPDF = async () => {
+    if (!levelId) return;
+  
+    setLoading(true);
+    try {
+      const response = await studentsAPI.getPDF(parseInt(levelId));
+      setStudentPDF(response.data.results || []); 
+    } catch (error) {
+      console.error("Failed to load PDF:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -92,6 +108,7 @@ export default function Students() {
       setFormData({ full_name: "", activity: 0, oral: 0, written: 0 });
       setEditingStudent(null);
       loadStudents();
+      loadStudentsPDF();
     } catch (error) {
       console.error("Failed to save student:", error);
     }
@@ -161,60 +178,62 @@ export default function Students() {
 
 
 
-  const exportToPDF = () => {
-    if (students.length === 0) return;
-
+  const exportToPDF = async () => {
+    if (!levelId) return;
+  
     setExporting(true);
-
     try {
-      const pdf = new jsPDF("l", "mm", "a4");
-      pdf.addFileToVFS("Amiri-Regular.ttf", amiriRegular);
-      pdf.addFont("Amiri-Regular.ttf", "Amiri", "normal");
-      
-      if (typeof amiriBold !== 'undefined') {
-        pdf.addFileToVFS("Amiri-Bold.ttf", amiriBold);
-        pdf.addFont("Amiri-Bold.ttf", "Amiri", "bold");
+  
+      if (studentPDF && studentPDF.length > 0) {
+        const pdf = new jsPDF("l", "mm", "a4");
+        pdf.addFileToVFS("Amiri-Regular.ttf", amiriRegular);
+        pdf.addFont("Amiri-Regular.ttf", "Amiri", "normal");
+  
+        if (typeof amiriBold !== "undefined") {
+          pdf.addFileToVFS("Amiri-Bold.ttf", amiriBold);
+          pdf.addFont("Amiri-Bold.ttf", "Amiri", "bold");
+        }
+  
+        pdf.setFont("Amiri", "normal");
+        pdf.setFontSize(18);
+        pdf.text(levelName, pdf.internal.pageSize.getWidth() / 2, 15, {
+          align: "center",
+        });
+  
+        pdf.setFontSize(11);
+        autoTable(pdf, {
+          startY: 30,
+          head: [["النتيجة", "التقدير", "المجموع", "التحريري", "الشفوي", "النشاط", "المستوى", "الاسم"]],
+          body: studentPDF.map((s) => [
+            s.result,
+            s.grade,
+            s.total,
+            s.written || 0,
+            s.oral || 0,
+            s.activity || 0,
+            s.level_name,
+            s.full_name,
+          ]),
+          theme: "grid",
+          styles: {
+            font: "Amiri",
+            fontSize: 10,
+            halign: "right",
+            valign: "middle",
+            cellPadding: 4,
+          },
+          headStyles: {
+            fillColor: [240, 240, 240],
+            textColor: [50, 50, 50],
+            fontStyle: "bold",
+            halign: "center",
+          },
+        });
+  
+        pdf.save(`${levelName}_تقرير.pdf`);
+      } else {
+        console.warn("No PDF data available!");
       }
-
-      pdf.setFont("Amiri", "normal");
-      pdf.setFontSize(18);
-      pdf.text(levelName, pdf.internal.pageSize.getWidth() / 2, 15, {
-        align: "center",
-      });
-      pdf.setFontSize(11);
-      autoTable(pdf, {
-        startY: 30,
-        head: [["النتيجة", "التقدير", "المجموع", "التحريري", "الشفوي", "النشاط", "المستوى", "الاسم"]],
-        body: students.map((s) => [
-          s.result,
-          s.grade,
-          s.total,
-          s.written || 0,
-          s.oral || 0,
-          s.activity || 0,
-          s.level_name,
-          s.full_name,
-        ]),
-        theme: "grid",
-        styles: {
-          font: "Amiri",
-          fontSize: 10,
-          halign: "right",
-          valign: "middle",
-          cellPadding: 4,
-        },
-        headStyles: {
-          fillColor: [240, 240, 240],
-          textColor: [50, 50, 50],
-          fontStyle: "bold",
-          halign: "center", 
-        },
-        columnStyles: {
-          7: { halign: "right" },
-        },
-      });
-
-      pdf.save(`${levelName}_تقرير.pdf`);
     } catch (error) {
       console.error("Failed to export PDF:", error);
     } finally {

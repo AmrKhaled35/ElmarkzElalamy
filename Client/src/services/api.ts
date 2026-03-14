@@ -153,6 +153,8 @@ export const studentsAPI = {
 
   delete: (id: number) =>
     api.delete(`/api/student/${id}/`),
+  getPDF: (levelId: number) =>
+    api.get(`/api/student/level/${levelId}/pdf`)
 };
 
 export default api;
