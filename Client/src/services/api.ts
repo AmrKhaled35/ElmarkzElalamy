@@ -90,6 +90,12 @@ export const usersAPI = {
 
   getById: (id: number) =>
     api.get(`/api/auth/users/${id}/`),
+
+  setPassword: (current_password: string, new_password: string) =>
+    api.post('/api/auth/users/set_password/', {
+      current_password,
+      new_password,
+    }),
 };
 
 export const coursesAPI = {
