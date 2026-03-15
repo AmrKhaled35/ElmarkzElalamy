@@ -17,6 +17,7 @@ import amiriRegular from "../fonts/AmiriRegularnormal.js";
 import amiriBold from "../fonts/AmiriBoldnormal.js";
 import { useRef } from "react";
 import autoTable from "jspdf-autotable";
+import { useAuth } from "../contexts/AuthContext";
 
 interface Student {
   id: number;
@@ -51,6 +52,7 @@ export default function Students() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const tableRef = useRef<HTMLTableElement>(null);
   const [exporting, setExporting] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     loadStudents();
@@ -84,11 +86,11 @@ export default function Students() {
 
   const loadStudentsPDF = async () => {
     if (!levelId) return;
-  
+
     setLoading(true);
     try {
       const response = await studentsAPI.getPDF(parseInt(levelId));
-      setStudentPDF(response.data.results || []); 
+      setStudentPDF(response.data.results || []);
     } catch (error) {
       console.error("Failed to load PDF:", error);
     } finally {
@@ -113,7 +115,6 @@ export default function Students() {
       console.error("Failed to save student:", error);
     }
   };
-
 
   const handleDelete = (id: number) => {
     setDeleteId(id);
@@ -176,34 +177,42 @@ export default function Students() {
     return "bg-stone-100 text-stone-800";
   };
 
-
-
   const exportToPDF = async () => {
     if (!levelId) return;
-  
+
     setExporting(true);
     try {
-  
       if (studentPDF && studentPDF.length > 0) {
         const pdf = new jsPDF("l", "mm", "a4");
         pdf.addFileToVFS("Amiri-Regular.ttf", amiriRegular);
         pdf.addFont("Amiri-Regular.ttf", "Amiri", "normal");
-  
+
         if (typeof amiriBold !== "undefined") {
           pdf.addFileToVFS("Amiri-Bold.ttf", amiriBold);
           pdf.addFont("Amiri-Bold.ttf", "Amiri", "bold");
         }
-  
+
         pdf.setFont("Amiri", "normal");
         pdf.setFontSize(18);
         pdf.text(levelName, pdf.internal.pageSize.getWidth() / 2, 15, {
           align: "center",
         });
-  
+
         pdf.setFontSize(11);
         autoTable(pdf, {
           startY: 30,
-          head: [["النتيجة", "التقدير", "المجموع", "التحريري", "الشفوي", "النشاط", "المستوى", "الاسم"]],
+          head: [
+            [
+              "النتيجة",
+              "التقدير",
+              "المجموع",
+              "التحريري",
+              "الشفوي",
+              "النشاط",
+              "المستوى",
+              "الاسم",
+            ],
+          ],
           body: studentPDF.map((s) => [
             s.result,
             s.grade,
@@ -229,7 +238,7 @@ export default function Students() {
             halign: "center",
           },
         });
-  
+
         pdf.save(`${levelName}_تقرير.pdf`);
       } else {
         console.warn("No PDF data available!");
@@ -249,7 +258,7 @@ export default function Students() {
       </Layout>
     );
   }
-
+  const isAdmin = user?.role === "admin";
   return (
     <Layout>
       <div className="mb-8">
@@ -333,24 +342,28 @@ export default function Students() {
                     </div>
                   </div>
                   <div className="flex gap-1 bg-stone-50 rounded-lg p-1">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openEditModal(student);
-                      }}
-                      className="p-2 text-stone-600 hover:text-amber-600 hover:bg-stone-200 rounded-md transition"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(student.id);
-                      }}
-                      className="p-2 text-red-600 hover:bg-red-100 rounded-md transition"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {isAdmin && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditModal(student);
+                          }}
+                          className="p-2 text-stone-600 hover:bg-stone-100 rounded-lg transition"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(student.id);
+                          }}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -379,7 +392,7 @@ export default function Students() {
             ))}
           </div>
           <div className="hidden md:block bg-white rounded-lg border border-stone-200 overflow-hidden">
-            <table  ref={tableRef} className="w-full">
+            <table ref={tableRef} className="w-full">
               <thead className="bg-stone-50 border-b border-stone-200">
                 <tr>
                   <th className="text-right px-6 py-4 text-sm font-medium text-stone-700">
@@ -442,26 +455,28 @@ export default function Students() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditModal(student);
-                          }}
-                          className="p-2 text-stone-600 hover:bg-stone-100 rounded-lg transition"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(student.id);
-                          }}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      {isAdmin && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(student);
+                            }}
+                            className="p-2 text-stone-600 hover:bg-stone-100 rounded-lg transition"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(student.id);
+                            }}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
