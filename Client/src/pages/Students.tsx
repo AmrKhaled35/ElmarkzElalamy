@@ -179,7 +179,7 @@ export default function Students() {
 
   const exportToPDF = async () => {
     if (!levelId) return;
-  
+
     setExporting(true);
     try {
       if (studentPDF && studentPDF.length > 0) {
@@ -192,7 +192,7 @@ export default function Students() {
           pdf.addFileToVFS("Amiri-Bold.ttf", amiriBold);
           pdf.addFont("Amiri-Bold.ttf", "Amiri", "bold");
         }
-        pdf.setFillColor(253, 248, 235);         
+        pdf.setFillColor(253, 248, 235);
         pdf.rect(0, 0, pageWidth, pageHeight, "F");
         pdf.setDrawColor(139, 90, 43);
         pdf.setLineWidth(1.2);
@@ -207,12 +207,12 @@ export default function Students() {
         pdf.setFontSize(9);
         pdf.setTextColor(253, 248, 235);
         pdf.text("كشف درجات الطلاب", pageWidth / 2, 13.5, { align: "center" });
-  
+
         pdf.setFont("Amiri", "bold");
         pdf.setFontSize(22);
         pdf.setTextColor(80, 40, 10);
         pdf.text(levelName, pageWidth / 2, 27, { align: "center" });
-  
+
         autoTable(pdf, {
           startY: 40,
           head: [
@@ -231,8 +231,8 @@ export default function Students() {
             s.result,
             s.grade,
             s.total,
-            s.written  || 0,
-            s.oral     || 0,
+            s.written || 0,
+            s.oral || 0,
             s.activity || 0,
             s.level_name,
             s.full_name,
@@ -264,11 +264,11 @@ export default function Students() {
             if (data.section === "body" && data.column.index === 0) {
               const val = String(data.cell.raw ?? "").trim();
               if (val === "راسب" || val === "غائب") {
-                data.cell.styles.textColor  = [200, 30, 30];
-                data.cell.styles.fontStyle  = "bold";
+                data.cell.styles.textColor = [200, 30, 30];
+                data.cell.styles.fontStyle = "bold";
               } else if (val === "ناجح") {
-                data.cell.styles.textColor  = [30, 130, 60];
-                data.cell.styles.fontStyle  = "bold";
+                data.cell.styles.textColor = [30, 130, 60];
+                data.cell.styles.fontStyle = "bold";
               }
             }
           },
@@ -285,7 +285,7 @@ export default function Students() {
           },
           margin: { top: 40, left: 10, right: 10, bottom: 12 },
         });
-  
+
         pdf.save(`${levelName}_تقرير.pdf`);
       } else {
         console.warn("No PDF data available!");
@@ -326,7 +326,7 @@ export default function Students() {
           </div>
 
           <div className="flex gap-3">
-            {students.length > 0 && (
+            {isAdmin && students.length > 0 && (
               <button
                 onClick={exportToPDF}
                 disabled={exporting}
