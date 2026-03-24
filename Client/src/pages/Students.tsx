@@ -18,7 +18,7 @@ import amiriBold from "../fonts/AmiriBoldnormal.js";
 import { useRef } from "react";
 import autoTable from "jspdf-autotable";
 import { useAuth } from "../contexts/AuthContext";
-
+import ExcelJS from "exceljs";
 interface Student {
   id: number;
   full_name: string;
@@ -53,13 +53,13 @@ export default function Students() {
   const tableRef = useRef<HTMLTableElement>(null);
   const [exporting, setExporting] = useState(false);
   const { user } = useAuth();
-
+  const [showExportMenu, setShowExportMenu] = useState(false);
   useEffect(() => {
     loadStudents();
     loadLevel();
     loadStudentsPDF();
   }, [levelId]);
-
+  
   const loadLevel = async () => {
     try {
       if (levelId) {
@@ -204,7 +204,7 @@ export default function Students() {
         pdf.setFillColor(139, 90, 43);
         pdf.roundedRect(pageWidth / 2 - 60, 8, 120, 8, 2, 2, "F");
         pdf.setFont("Amiri", "bold");
-        pdf.setFontSize(9);
+        pdf.setFontSize(22);
         pdf.setTextColor(253, 248, 235);
         pdf.text("كشف درجات الطلاب", pageWidth / 2, 13.5, { align: "center" });
 
@@ -296,6 +296,183 @@ export default function Students() {
       setExporting(false);
     }
   };
+
+  const exportToExcel = async () => {
+    if (!levelId) return;
+
+    setExporting(true);
+    try {
+      if (studentPDF && studentPDF.length > 0) {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("كشف الدرجات", {
+          views: [{ rightToLeft: true }],
+        });
+        worksheet.columns = [
+          { key: "full_name", width: 45 },
+          { key: "level_name", width: 27 },
+          { key: "activity", width: 18 },
+          { key: "oral", width: 18 },
+          { key: "written", width: 18 },
+          { key: "total", width: 18 },
+          { key: "grade", width: 22 },
+          { key: "result", width: 18 },
+        ];
+
+        const thinBorder = {
+          top: { style: "thin", color: { argb: "FFC8A564" } },
+          bottom: { style: "thin", color: { argb: "FFC8A564" } },
+          left: { style: "thin", color: { argb: "FFC8A564" } },
+          right: { style: "thin", color: { argb: "FFC8A564" } },
+        };
+        worksheet.mergeCells("A1:H1");
+        const titleCell = worksheet.getCell("A1");
+        titleCell.value = "كشف درجات الطلاب";
+        titleCell.font = {
+          name: "Times New Roman",
+          bold: true,
+          size: 32,
+          color: { argb: "FFFDF8EB" },
+        };
+        titleCell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF8B5A2B" },
+        };
+        titleCell.alignment = {
+          horizontal: "center",
+          vertical: "middle",
+          readingOrder: "rightToLeft",
+        };
+        worksheet.getRow(1).height = 50;
+        worksheet.mergeCells("A2:H2");
+        const levelCell = worksheet.getCell("A2");
+        levelCell.value = levelName;
+        levelCell.font = {
+          name: "Times New Roman",
+          bold: true,
+          size: 27,
+          color: { argb: "FF8B5A2B" },
+        };
+        levelCell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFF0E0B8" },
+        };
+        levelCell.alignment = {
+          horizontal: "center",
+          vertical: "middle",
+          readingOrder: "rightToLeft",
+        };
+        worksheet.getRow(2).height = 40;
+        const headers = [
+          "الاسم",
+          "المستوى",
+          "النشاط",
+          "الشفوي",
+          "التحريري",
+          "المجموع",
+          "التقدير",
+          "النتيجة",
+        ];
+        const headerRow = worksheet.addRow(headers);
+        headerRow.height = 38;
+        headerRow.eachCell((cell) => {
+          cell.font = {
+            name: "Times New Roman",
+            bold: true,
+            size: 22,
+            color: { argb: "FFFDF8EB" },
+          };
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FF8B5A2B" },
+          };
+          cell.alignment = {
+            horizontal: "center",
+            vertical: "middle",
+            readingOrder: "rightToLeft",
+          };
+          cell.border = thinBorder;
+        });
+
+        studentPDF.forEach((s, index) => {
+          const rowData = [
+            s.full_name,
+            s.level_name,
+            s.activity || 0,
+            s.oral || 0,
+            s.written || 0,
+            s.total,
+            s.grade,
+            s.result,
+          ];
+
+          const row = worksheet.addRow(rowData);
+          row.height = 32;
+          const fillColor = index % 2 === 0 ? "FFFDF8EB" : "FFF5EBD2";
+
+          row.eachCell((cell, colNumber) => {
+            cell.fill = {
+              type: "pattern",
+              pattern: "solid",
+              fgColor: { argb: fillColor },
+            };
+            cell.alignment = {
+              horizontal: "center",
+              vertical: "middle",
+              readingOrder: "rightToLeft",
+            };
+            cell.font = { name: "Times New Roman", size: 18, bold: true };
+            cell.border = thinBorder;
+            if (colNumber === 1) {
+              cell.alignment = {
+                horizontal: "right",
+                vertical: "middle",
+                readingOrder: "rightToLeft",
+              };
+              cell.font = { name: "Times New Roman", bold: true, size: 18 };
+            }
+
+            if (colNumber === 8) {
+              const val = String(s.result).trim();
+              if (val === "راسب" || val === "غائب") {
+                cell.font = {
+                  name: "Times New Roman",
+                  bold: true,
+                  size: 18,
+                  color: { argb: "FFC81E1E" },
+                };
+              } else if (val === "ناجح") {
+                cell.font = {
+                  name: "Times New Roman",
+                  bold: true,
+                  size: 18,
+                  color: { argb: "FF1E8240" },
+                };
+              }
+            }
+          });
+        });
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${levelName}_تقرير.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        console.warn("No data available!");
+      }
+    } catch (error) {
+      console.error("Failed to export Excel:", error);
+    } finally {
+      setExporting(false);
+    }
+  };
   if (loading) {
     return (
       <Layout>
@@ -305,6 +482,7 @@ export default function Students() {
       </Layout>
     );
   }
+
   const isAdmin = user?.role === "admin";
   return (
     <Layout>
@@ -326,16 +504,43 @@ export default function Students() {
           </div>
 
           <div className="flex gap-3">
-            {isAdmin && students.length > 0 && (
-              <button
-                onClick={exportToPDF}
-                disabled={exporting}
-                className="flex items-center gap-2 bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-              >
-                <FileDown className="w-5 h-5" />
-                <span>{exporting ? "جاري التصدير..." : "تصدير PDF"}</span>
-              </button>
-            )}
+            <div className="relative">
+              {isAdmin && students.length > 0 && (
+                <>
+                  <button
+                    onClick={() => setShowExportMenu(!showExportMenu)}
+                    className="flex items-center gap-2 bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-amber-600 transition"
+                  >
+                    <FileDown className="w-5 h-5" />
+                    <span>تصدير</span>
+                  </button>
+
+                  {showExportMenu && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white border border-stone-200 rounded-lg shadow-lg z-50 overflow-hidden">
+                      <button
+                        onClick={() => {
+                          setShowExportMenu(false);
+                          exportToPDF();
+                        }}
+                        className="w-full text-right px-4 py-3 hover:bg-stone-100 transition"
+                      >
+                        📄 تصدير PDF
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setShowExportMenu(false);
+                          exportToExcel();
+                        }}
+                        className="w-full text-right px-4 py-3 hover:bg-stone-100 transition"
+                      >
+                        📊 تصدير Excel
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
 
             <button
               onClick={openCreateModal}
