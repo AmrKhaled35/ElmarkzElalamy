@@ -209,7 +209,7 @@ export default function Students() {
         pdf.text("كشف درجات الطلاب", pageWidth / 2, 13.5, { align: "center" });
 
         pdf.setFont("Amiri", "bold");
-        pdf.setFontSize(22);
+        pdf.setFontSize(32);
         pdf.setTextColor(80, 40, 10);
         pdf.text(levelName, pageWidth / 2, 27, { align: "center" });
 
