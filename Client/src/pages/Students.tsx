@@ -179,28 +179,42 @@ export default function Students() {
 
   const exportToPDF = async () => {
     if (!levelId) return;
-
+  
     setExporting(true);
     try {
       if (studentPDF && studentPDF.length > 0) {
         const pdf = new jsPDF("l", "mm", "a4");
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
         pdf.addFileToVFS("Amiri-Regular.ttf", amiriRegular);
         pdf.addFont("Amiri-Regular.ttf", "Amiri", "normal");
-
         if (typeof amiriBold !== "undefined") {
           pdf.addFileToVFS("Amiri-Bold.ttf", amiriBold);
           pdf.addFont("Amiri-Bold.ttf", "Amiri", "bold");
         }
-
-        pdf.setFont("Amiri", "normal");
-        pdf.setFontSize(18);
-        pdf.text(levelName, pdf.internal.pageSize.getWidth() / 2, 15, {
-          align: "center",
-        });
-
-        pdf.setFontSize(11);
+        pdf.setFillColor(253, 248, 235);         
+        pdf.rect(0, 0, pageWidth, pageHeight, "F");
+        pdf.setDrawColor(139, 90, 43);
+        pdf.setLineWidth(1.2);
+        pdf.rect(4, 4, pageWidth - 8, pageHeight - 8);
+        pdf.setLineWidth(0.4);
+        pdf.rect(6, 6, pageWidth - 12, pageHeight - 12);
+        pdf.setDrawColor(180, 130, 60);
+        pdf.setLineWidth(0.6);
+        pdf.setFillColor(139, 90, 43);
+        pdf.roundedRect(pageWidth / 2 - 60, 8, 120, 8, 2, 2, "F");
+        pdf.setFont("Amiri", "bold");
+        pdf.setFontSize(9);
+        pdf.setTextColor(253, 248, 235);
+        pdf.text("كشف درجات الطلاب", pageWidth / 2, 13.5, { align: "center" });
+  
+        pdf.setFont("Amiri", "bold");
+        pdf.setFontSize(22);
+        pdf.setTextColor(80, 40, 10);
+        pdf.text(levelName, pageWidth / 2, 27, { align: "center" });
+  
         autoTable(pdf, {
-          startY: 30,
+          startY: 40,
           head: [
             [
               "النتيجة",
@@ -217,8 +231,8 @@ export default function Students() {
             s.result,
             s.grade,
             s.total,
-            s.written || 0,
-            s.oral || 0,
+            s.written  || 0,
+            s.oral     || 0,
             s.activity || 0,
             s.level_name,
             s.full_name,
@@ -226,19 +240,52 @@ export default function Students() {
           theme: "grid",
           styles: {
             font: "Amiri",
-            fontSize: 10,
+            fontSize: 14,
             halign: "right",
             valign: "middle",
-            cellPadding: 4,
+            cellPadding: { top: 4, bottom: 4, left: 5, right: 5 },
+            lineColor: [200, 165, 100],
+            lineWidth: 0.3,
+            textColor: [50, 30, 10],
+            fillColor: [253, 248, 235],
           },
           headStyles: {
-            fillColor: [240, 240, 240],
-            textColor: [50, 50, 50],
+            fillColor: [139, 90, 43],
+            textColor: [253, 248, 235],
             fontStyle: "bold",
             halign: "center",
+            fontSize: 11,
+            cellPadding: { top: 5, bottom: 5, left: 5, right: 5 },
           },
+          alternateRowStyles: {
+            fillColor: [245, 235, 210],
+          },
+          didParseCell(data) {
+            if (data.section === "body" && data.column.index === 0) {
+              const val = String(data.cell.raw ?? "").trim();
+              if (val === "راسب" || val === "غائب") {
+                data.cell.styles.textColor  = [200, 30, 30];
+                data.cell.styles.fontStyle  = "bold";
+              } else if (val === "ناجح") {
+                data.cell.styles.textColor  = [30, 130, 60];
+                data.cell.styles.fontStyle  = "bold";
+              }
+            }
+          },
+          didDrawPage(data) {
+            pdf.setFont("Amiri", "normal");
+            pdf.setFontSize(16);
+            pdf.setTextColor(139, 90, 43);
+            pdf.text(
+              `صفحة ${data.pageNumber}`,
+              pageWidth / 2,
+              pageHeight - 10,
+              { align: "center" }
+            );
+          },
+          margin: { top: 40, left: 10, right: 10, bottom: 12 },
         });
-
+  
         pdf.save(`${levelName}_تقرير.pdf`);
       } else {
         console.warn("No PDF data available!");
