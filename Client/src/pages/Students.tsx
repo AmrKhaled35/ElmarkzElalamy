@@ -483,7 +483,7 @@ export default function Students() {
     );
   }
 
-  const isAdmin = user?.role === "admin";
+  const isAdmin = true;
   return (
     <Layout>
       <div className="mb-8">
