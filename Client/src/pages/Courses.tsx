@@ -5,6 +5,7 @@ import Layout from "../components/Layout";
 import { coursesAPI } from "../services/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { useAuth } from "../contexts/AuthContext";
+import Pagination from "../components/Pagination";
 
 interface Course {
   id: number;
@@ -21,16 +22,21 @@ export default function Courses() {
   const [formData, setFormData] = useState({ name: "", description: "" });
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const PAGE_SIZE = 10;
   const { user } = useAuth();
 
   useEffect(() => {
-    loadCourses();
-  }, []);
+    loadCourses(currentPage);
+  }, [currentPage]);
 
-  const loadCourses = async () => {
+  const loadCourses = async (page = 1) => {
+    setLoading(true);
     try {
-      const response = await coursesAPI.getAll();
+      const response = await coursesAPI.getAll(page);
       setCourses(response.data.results || []);
+      setTotalCount(response.data.count || 0);
     } catch (error) {
       console.error("Failed to load courses:", error);
     } finally {
@@ -49,7 +55,7 @@ export default function Courses() {
       setShowModal(false);
       setFormData({ name: "", description: "" });
       setEditingCourse(null);
-      loadCourses();
+      loadCourses(currentPage);
     } catch (error) {
       console.error("Failed to save course:", error);
     }
@@ -64,7 +70,7 @@ export default function Courses() {
     if (!deleteId) return;
     try {
       await coursesAPI.delete(deleteId);
-      loadCourses();
+      loadCourses(currentPage);
     } catch (error) {
       console.error("Failed to delete course:", error);
     }
@@ -228,6 +234,13 @@ export default function Courses() {
           ))}
         </div>
       )}
+
+      <Pagination
+        currentPage={currentPage}
+        totalCount={totalCount}
+        pageSize={PAGE_SIZE}
+        onPageChange={setCurrentPage}
+      />
 
       {showModal && (
         <div

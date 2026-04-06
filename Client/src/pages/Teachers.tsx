@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Plus, User, Mail, Trash2 } from "lucide-react";
 import Layout from "../components/Layout";
 import { usersAPI } from "../services/api";
+import Pagination from "../components/Pagination";
 
 interface Teacher {
   id: number;
@@ -43,18 +44,24 @@ export default function Teachers() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [errors, setErrors] = useState<any>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const PAGE_SIZE = 10;
 
   useEffect(() => {
-    loadTeachers();
-  }, []);
+    loadTeachers(currentPage);
+  }, [currentPage]);
 
-  const loadTeachers = async () => {
+  const loadTeachers = async (page = 1) => {
+    setLoading(true);
     try {
-      const response = await usersAPI.getAll();
+      const response = await usersAPI.getAll(page);
       const teachersList = response.data.results.filter(
         (u: Teacher) => u.role !== "admin"
       );
       setTeachers(teachersList);
+      // count excludes admin; we approximate from total for pagination
+      setTotalCount(response.data.count || 0);
     } catch (error) {
       console.error("Failed to load teachers:", error);
     } finally {
@@ -72,7 +79,7 @@ export default function Teachers() {
 
       setShowModal(false);
       setFormData({ full_name: "", email: "", password: "", role: "teacher" });
-      loadTeachers();
+      loadTeachers(currentPage);
     } catch (error: any) {
       if (error.response && error.response.data) {
         setErrors(error.response.data);
@@ -92,7 +99,7 @@ export default function Teachers() {
 
     try {
       await usersAPI.delete(deleteId, deletePassword);
-      loadTeachers();
+      loadTeachers(currentPage);
     } catch (error) {
       console.error("Failed to delete teacher:", error);
     }
@@ -262,6 +269,13 @@ export default function Teachers() {
           </div>
         </div>
       )}
+
+      <Pagination
+        currentPage={currentPage}
+        totalCount={totalCount}
+        pageSize={PAGE_SIZE}
+        onPageChange={setCurrentPage}
+      />
 
       {/* Modal - Improved for mobile with 'inset-0' and padding */}
       {showModal && (

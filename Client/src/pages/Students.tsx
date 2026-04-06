@@ -19,6 +19,7 @@ import { useRef } from "react";
 import autoTable from "jspdf-autotable";
 import { useAuth } from "../contexts/AuthContext";
 import ExcelJS from "exceljs";
+import Pagination from "../components/Pagination";
 interface Student {
   id: number;
   full_name: string;
@@ -54,11 +55,19 @@ export default function Students() {
   const [exporting, setExporting] = useState(false);
   const { user } = useAuth();
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const PAGE_SIZE = 10;
+
   useEffect(() => {
-    loadStudents();
+    setCurrentPage(1);
     loadLevel();
     loadStudentsPDF();
   }, [levelId]);
+
+  useEffect(() => {
+    loadStudents(currentPage);
+  }, [currentPage, levelId]);
   
   const loadLevel = async () => {
     try {
@@ -71,11 +80,13 @@ export default function Students() {
     }
   };
 
-  const loadStudents = async () => {
+  const loadStudents = async (page = 1) => {
+    setLoading(true);
     try {
       if (levelId) {
-        const response = await studentsAPI.getByLevel(parseInt(levelId));
+        const response = await studentsAPI.getByLevel(parseInt(levelId), page);
         setStudents(response.data.results || []);
+        setTotalCount(response.data.count || 0);
       }
     } catch (error) {
       console.error("Failed to load students:", error);
@@ -109,7 +120,7 @@ export default function Students() {
       setShowModal(false);
       setFormData({ full_name: "", activity: 0, oral: 0, written: 0 });
       setEditingStudent(null);
-      loadStudents();
+      loadStudents(currentPage);
       loadStudentsPDF();
     } catch (error) {
       console.error("Failed to save student:", error);
@@ -125,7 +136,7 @@ export default function Students() {
 
     try {
       await studentsAPI.delete(deleteId);
-      loadStudents();
+      loadStudents(currentPage);
     } catch (error) {
       console.error("Failed to delete level:", error);
     }
@@ -737,6 +748,13 @@ export default function Students() {
           </div>
         </>
       )}
+
+      <Pagination
+        currentPage={currentPage}
+        totalCount={totalCount}
+        pageSize={PAGE_SIZE}
+        onPageChange={setCurrentPage}
+      />
 
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">

@@ -12,6 +12,7 @@ import Layout from "../components/Layout";
 import { levelsAPI, coursesAPI, usersAPI } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
+import Pagination from "../components/Pagination";
 
 interface Level {
   id: number;
@@ -40,11 +41,18 @@ export default function Levels() {
   const [formData, setFormData] = useState({ name: "", description: "" });
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const PAGE_SIZE = 10;
 
   useEffect(() => {
-    loadLevels();
+    setCurrentPage(1);
     loadCourse();
   }, [courseId]);
+
+  useEffect(() => {
+    loadLevels(currentPage);
+  }, [currentPage, courseId]);
 
   const loadCourse = async () => {
     try {
@@ -57,11 +65,13 @@ export default function Levels() {
     }
   };
 
-  const loadLevels = async () => {
+  const loadLevels = async (page = 1) => {
+    setLoading(true);
     try {
       if (courseId) {
-        const response = await levelsAPI.getAll(parseInt(courseId));
+        const response = await levelsAPI.getAll(parseInt(courseId), page);
         setLevels(response.data.results || []);
+        setTotalCount(response.data.count || 0);
       }
     } catch (error) {
       console.error("Failed to load levels:", error);
@@ -102,7 +112,7 @@ export default function Levels() {
       setFormData({ name: "", description: "" });
       setEditingLevel(null);
       setSelectedTeacher(null);
-      loadLevels();
+      loadLevels(currentPage);
     } catch (error) {
       console.error("Failed to save level:", error);
     }
@@ -127,7 +137,7 @@ export default function Levels() {
 
     try {
       await levelsAPI.delete(deleteId);
-      loadLevels();
+      loadLevels(currentPage);
     } catch (error) {
       console.error("Failed to delete level:", error);
     }
@@ -288,6 +298,13 @@ export default function Levels() {
           ))}
         </div>
       )}
+
+      <Pagination
+        currentPage={currentPage}
+        totalCount={totalCount}
+        pageSize={PAGE_SIZE}
+        onPageChange={setCurrentPage}
+      />
 
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
