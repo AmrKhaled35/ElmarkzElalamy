@@ -495,6 +495,7 @@ export default function Students() {
   }
 
   const isAdmin = true;
+  const ExportisAdmin = user?.role === "admin";
   return (
     <Layout>
       <div className="mb-8">
@@ -516,7 +517,7 @@ export default function Students() {
 
           <div className="flex gap-3">
             <div className="relative">
-              {isAdmin && students.length > 0 && (
+              {ExportisAdmin && students.length > 0 && (
                 <>
                   <button
                     onClick={() => setShowExportMenu(!showExportMenu)}
