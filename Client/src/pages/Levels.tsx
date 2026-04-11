@@ -82,12 +82,24 @@ export default function Levels() {
 
   const loadTeachers = async () => {
     try {
-      const response = await usersAPI.getAll();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const teachersList = response.data.results.filter(
-        (u: any) => u.role !== "admin"
-      );
-      setTeachers(teachersList);
+      let allTeachers: Teacher[] = [];
+      let page = 1;
+      let hasMore = true;
+  
+      while (hasMore) {
+        const response = await usersAPI.getAll(page);
+        const results = response.data.results || [];
+        const teachersList = results.filter((u: any) => u.role !== "admin");
+        allTeachers = [...allTeachers, ...teachersList];
+  
+        if (response.data.next) {
+          page++;
+        } else {
+          hasMore = false;
+        }
+      }
+  
+      setTeachers(allTeachers);
     } catch (error) {
       console.error("Failed to load teachers:", error);
     }
