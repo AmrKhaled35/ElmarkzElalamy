@@ -18,6 +18,9 @@ interface Level {
   id: number;
   name: string;
   description?: string;
+  course: number;
+  user: number;
+  teacherName?: string;
 }
 
 interface Teacher {
@@ -70,8 +73,34 @@ export default function Levels() {
     try {
       if (courseId) {
         const response = await levelsAPI.getAll(parseInt(courseId), page);
-        setLevels(response.data.results || []);
+        const basicLevels = response.data.results || [];
         setTotalCount(response.data.count || 0);
+
+        const detailedLevels = await Promise.all(
+          basicLevels.map(
+            async (level: {
+              id: number;
+              name: string;
+              description?: string;
+              user: number;
+              course: number;
+            }) => {
+              const levelDetail = await levelsAPI
+                .getById(level.id)
+                .then((res) => res.data);
+
+              let teacherName = "";
+              if (levelDetail.user) {
+                const userRes = await usersAPI.getById(levelDetail.user);
+                teacherName = userRes.data.full_name || "";
+              }
+
+              return { ...levelDetail, teacherName };
+            }
+          )
+        );
+
+        setLevels(detailedLevels);
       }
     } catch (error) {
       console.error("Failed to load levels:", error);
@@ -85,20 +114,20 @@ export default function Levels() {
       let allTeachers: Teacher[] = [];
       let page = 1;
       let hasMore = true;
-  
+
       while (hasMore) {
         const response = await usersAPI.getAll(page);
         const results = response.data.results || [];
         const teachersList = results.filter((u: any) => u.role !== "admin");
         allTeachers = [...allTeachers, ...teachersList];
-  
+
         if (response.data.next) {
           page++;
         } else {
           hasMore = false;
         }
       }
-  
+
       setTeachers(allTeachers);
     } catch (error) {
       console.error("Failed to load teachers:", error);
@@ -270,6 +299,12 @@ export default function Levels() {
                   <p className="text-stone-600 text-sm line-clamp-2">
                     {level.description}
                   </p>
+                )}
+                {level.teacherName && (
+                  <div className="flex items-center gap-1 mt-2 text-sm text-stone-500">
+                    <BookOpen className="w-4 h-4" />
+                    <span>{level.teacherName}</span>
+                  </div>
                 )}
 
                 {user?.role === "admin" ? (
