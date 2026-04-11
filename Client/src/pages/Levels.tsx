@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import ExcelJS from "exceljs";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -13,6 +14,7 @@ import { levelsAPI, coursesAPI, usersAPI } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
 import Pagination from "../components/Pagination";
+import { studentsAPI} from "../services/api";
 
 interface Level {
   id: number;
@@ -38,6 +40,7 @@ export default function Levels() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showTeacherModal, setShowTeacherModal] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [selectedTeacher, setSelectedTeacher] = useState<number | null>(null);
   const [editingLevel, setEditingLevel] = useState<Level | null>(null);
@@ -67,7 +70,181 @@ export default function Levels() {
       console.error("Failed to load course:", error);
     }
   };
-
+  const exportCourseStudents = async () => {
+    if (!courseId) return;
+  
+    setExporting(true);
+    try {
+      type Student = {
+        full_name: string;
+        level_name: string;
+        activity?: number;
+        oral?: number;
+        written?: number;
+        total: number;
+        grade: string;
+        result: string;
+      };
+  
+      let allStudents: Student[] = [];
+      let page = 1;
+      let hasMore = true;
+  
+      while (hasMore) {
+        const response = await studentsAPI.getAllByCourse(courseId, page);
+        const data = response.data;
+  
+        allStudents = [...allStudents, ...data.results];
+  
+        if (data.next) {
+          page++;
+        } else {
+          hasMore = false;
+        }
+      }
+  
+      if (allStudents.length === 0) {
+        console.warn("No data!");
+        return;
+      }
+  
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("طلاب الكورس", {
+        views: [{ rightToLeft: true }],
+      });
+  
+      worksheet.columns = [
+        { key: "full_name", width: 40 },
+        { key: "level_name", width: 30 },
+        { key: "activity", width: 18 },
+        { key: "oral", width: 18 },
+        { key: "written", width: 18 },
+        { key: "total", width: 18 },
+        { key: "grade", width: 22 },
+        { key: "result", width: 18 },
+      ];
+  
+      const thinBorder = {
+        top: { style: "thin" as ExcelJS.BorderStyle, color: { argb: "FFC8A564" } },
+        bottom: { style: "thin" as ExcelJS.BorderStyle, color: { argb: "FFC8A564" } },
+        left: { style: "thin" as ExcelJS.BorderStyle, color: { argb: "FFC8A564" } },
+        right: { style: "thin" as ExcelJS.BorderStyle, color: { argb: "FFC8A564" } },
+      };
+  
+      worksheet.mergeCells("A1:H1");
+      const titleCell = worksheet.getCell("A1");
+      titleCell.value = `طلاب ${courseName}`;
+      titleCell.font = {
+        name: "Times New Roman",
+        bold: true,
+        size: 30,
+        color: { argb: "FFFDF8EB" },
+      };
+      titleCell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF8B5A2B" },
+      };
+      titleCell.alignment = {
+        horizontal: "center",
+        vertical: "middle",
+        readingOrder: "rtl",
+      };
+      worksheet.getRow(1).height = 50;
+  
+      const headers = [
+        "الاسم",
+        "المستوى",
+        "النشاط",
+        "الشفوي",
+        "التحريري",
+        "المجموع",
+        "التقدير",
+        "النتيجة",
+      ];
+  
+      const headerRow = worksheet.addRow(headers);
+      headerRow.height = 38;
+  
+      headerRow.eachCell((cell) => {
+        cell.font = {
+          name: "Times New Roman",
+          bold: true,
+          size: 20,
+          color: { argb: "FFFDF8EB" },
+        };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF8B5A2B" },
+        };
+        cell.alignment = {
+          horizontal: "center",
+          vertical: "middle",
+          readingOrder: "rtl",
+        };
+        cell.border = thinBorder;
+      });
+  
+      allStudents.forEach((s, index) => {
+        const row = worksheet.addRow([
+          s.full_name,
+          s.level_name,
+          s.activity ?? 0,
+          s.oral ?? 0,
+          s.written ?? 0,
+          s.total,
+          s.grade,
+          s.result,
+        ]);
+  
+        const fillColor = index % 2 === 0 ? "FFFDF8EB" : "FFF5EBD2";
+  
+        row.eachCell((cell, colNumber) => {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: fillColor },
+          };
+          cell.alignment = {
+            horizontal: "center",
+            vertical: "middle",
+            readingOrder: "rtl",
+          };
+          cell.font = { name: "Times New Roman", size: 16, bold: true };
+          cell.border = thinBorder;
+  
+          if (colNumber === 1) {
+            cell.alignment = { horizontal: "right", vertical: "middle" };
+          }
+  
+          if (colNumber === 8) {
+            if (s.result === "راسب" || s.result === "غائب") {
+              cell.font = { ...cell.font, color: { argb: "FFC81E1E" } };
+            } else if (s.result === "ناجح") {
+              cell.font = { ...cell.font, color: { argb: "FF1E8240" } };
+            }
+          }
+        });
+      });
+  
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+  
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `طلاب_${courseName}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Export failed:", error);
+    } finally {
+      setExporting(false);
+    }
+  };
   const loadLevels = async (page = 1) => {
     setLoading(true);
     try {
@@ -231,28 +408,38 @@ export default function Levels() {
         </button>
 
         <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-stone-800 mb-2">
-              {courseName}
-            </h1>
-            <p className="text-stone-600">المستويات الدراسية</p>
-          </div>
+  <div>
+    <h1 className="text-3xl font-bold text-stone-800 mb-2">
+      {courseName}
+    </h1>
+    <p className="text-stone-600">المستويات الدراسية</p>
+  </div>
 
-          {user?.role === "admin" ? (
-            <button
-              onClick={openCreateModal}
-              className="flex items-center gap-2 bg-stone-800 text-white px-6 py-3 rounded-lg hover:bg-stone-900 transition shadow-md"
-            >
-              <Plus className="w-5 h-5" />
-              <span>إضافة مستوى</span>
-            </button>
-          ) : (
-            <div className="flex items-center gap-2 px-6 py-3 rounded-lg border border-stone-200 text-stone-700 bg-stone-100">
-              <BookOpen className="w-5 h-5 opacity-100" />
-              <span>عرض المستويات المتاحة</span>
-            </div>
-          )}
-        </div>
+  <div className="flex gap-3">
+    <button
+      onClick={exportCourseStudents}
+      className="flex items-center gap-2 bg-amber-600 text-white px-6 py-3 rounded-lg hover:bg-amber-700 transition shadow-md"
+    >
+      <BookOpen className="w-5 h-5" />
+      <span>تحميل Excel</span>
+    </button>
+
+    {user?.role === "admin" ? (
+      <button
+        onClick={openCreateModal}
+        className="flex items-center gap-2 bg-stone-800 text-white px-6 py-3 rounded-lg hover:bg-stone-900 transition shadow-md"
+      >
+        <Plus className="w-5 h-5" />
+        <span>إضافة مستوى</span>
+      </button>
+    ) : (
+      <div className="flex items-center gap-2 px-6 py-3 rounded-lg border border-stone-200 text-stone-700 bg-stone-100">
+        <BookOpen className="w-5 h-5 opacity-100" />
+        <span>عرض المستويات المتاحة</span>
+      </div>
+    )}
+  </div>
+</div>
       </div>
 
       {levels.length === 0 ? (
@@ -269,6 +456,7 @@ export default function Levels() {
               <Plus className="w-5 h-5" />
               <span>إضافة مستوى جديد</span>
             </button>
+            
           ) : (
             <div className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-stone-200 text-stone-700 bg-stone-100">
               <BookOpen className="w-5 h-5 opacity-100" />

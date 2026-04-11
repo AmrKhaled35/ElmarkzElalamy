@@ -148,6 +148,9 @@ export const studentsAPI = {
     return api.get(`/api/student/level/${levelId}/?${params.toString()}`);
   },
 
+  getAllByCourse: (courseId: string | number, page = 1) =>
+    api.get(`/api/student/all/course/${courseId}/?page=${page}`),
+
   create: (levelId: number, data: { full_name: string; activity: number; oral: number; written: number }) =>
     api.post(`/api/student/level/${levelId}/`, data),
 
