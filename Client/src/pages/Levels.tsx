@@ -14,7 +14,7 @@ import { levelsAPI, coursesAPI, usersAPI } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
 import Pagination from "../components/Pagination";
-import { studentsAPI} from "../services/api";
+import { studentsAPI } from "../services/api";
 
 interface Level {
   id: number;
@@ -72,7 +72,7 @@ export default function Levels() {
   };
   const exportCourseStudents = async () => {
     if (!courseId) return;
-  
+
     setExporting(true);
     try {
       type Student = {
@@ -85,34 +85,34 @@ export default function Levels() {
         grade: string;
         result: string;
       };
-  
+
       let allStudents: Student[] = [];
       let page = 1;
       let hasMore = true;
-  
+
       while (hasMore) {
         const response = await studentsAPI.getAllByCourse(courseId, page);
         const data = response.data;
-  
+
         allStudents = [...allStudents, ...data.results];
-  
+
         if (data.next) {
           page++;
         } else {
           hasMore = false;
         }
       }
-  
+
       if (allStudents.length === 0) {
         console.warn("No data!");
         return;
       }
-  
+
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet("طلاب الكورس", {
         views: [{ rightToLeft: true }],
       });
-  
+
       worksheet.columns = [
         { key: "full_name", width: 40 },
         { key: "level_name", width: 30 },
@@ -123,14 +123,26 @@ export default function Levels() {
         { key: "grade", width: 22 },
         { key: "result", width: 18 },
       ];
-  
+
       const thinBorder = {
-        top: { style: "thin" as ExcelJS.BorderStyle, color: { argb: "FFC8A564" } },
-        bottom: { style: "thin" as ExcelJS.BorderStyle, color: { argb: "FFC8A564" } },
-        left: { style: "thin" as ExcelJS.BorderStyle, color: { argb: "FFC8A564" } },
-        right: { style: "thin" as ExcelJS.BorderStyle, color: { argb: "FFC8A564" } },
+        top: {
+          style: "thin" as ExcelJS.BorderStyle,
+          color: { argb: "FFC8A564" },
+        },
+        bottom: {
+          style: "thin" as ExcelJS.BorderStyle,
+          color: { argb: "FFC8A564" },
+        },
+        left: {
+          style: "thin" as ExcelJS.BorderStyle,
+          color: { argb: "FFC8A564" },
+        },
+        right: {
+          style: "thin" as ExcelJS.BorderStyle,
+          color: { argb: "FFC8A564" },
+        },
       };
-  
+
       worksheet.mergeCells("A1:H1");
       const titleCell = worksheet.getCell("A1");
       titleCell.value = `طلاب ${courseName}`;
@@ -151,7 +163,7 @@ export default function Levels() {
         readingOrder: "rtl",
       };
       worksheet.getRow(1).height = 50;
-  
+
       const headers = [
         "الاسم",
         "المستوى",
@@ -162,10 +174,10 @@ export default function Levels() {
         "التقدير",
         "النتيجة",
       ];
-  
+
       const headerRow = worksheet.addRow(headers);
       headerRow.height = 38;
-  
+
       headerRow.eachCell((cell) => {
         cell.font = {
           name: "Times New Roman",
@@ -185,7 +197,7 @@ export default function Levels() {
         };
         cell.border = thinBorder;
       });
-  
+
       allStudents.forEach((s, index) => {
         const row = worksheet.addRow([
           s.full_name,
@@ -197,9 +209,9 @@ export default function Levels() {
           s.grade,
           s.result,
         ]);
-  
+
         const fillColor = index % 2 === 0 ? "FFFDF8EB" : "FFF5EBD2";
-  
+
         row.eachCell((cell, colNumber) => {
           cell.fill = {
             type: "pattern",
@@ -213,11 +225,11 @@ export default function Levels() {
           };
           cell.font = { name: "Times New Roman", size: 16, bold: true };
           cell.border = thinBorder;
-  
+
           if (colNumber === 1) {
             cell.alignment = { horizontal: "right", vertical: "middle" };
           }
-  
+
           if (colNumber === 8) {
             if (s.result === "راسب" || s.result === "غائب") {
               cell.font = { ...cell.font, color: { argb: "FFC81E1E" } };
@@ -227,12 +239,12 @@ export default function Levels() {
           }
         });
       });
-  
+
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-  
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -408,38 +420,33 @@ export default function Levels() {
         </button>
 
         <div className="flex justify-between items-center mb-8">
-  <div>
-    <h1 className="text-3xl font-bold text-stone-800 mb-2">
-      {courseName}
-    </h1>
-    <p className="text-stone-600">المستويات الدراسية</p>
-  </div>
+          <div>
+            <h1 className="text-3xl font-bold text-stone-800 mb-2">
+              {courseName}
+            </h1>
+            <p className="text-stone-600">المستويات الدراسية</p>
+          </div>
 
-  <div className="flex gap-3">
-    <button
-      onClick={exportCourseStudents}
-      className="flex items-center gap-2 bg-amber-600 text-white px-6 py-3 rounded-lg hover:bg-amber-700 transition shadow-md"
-    >
-      <BookOpen className="w-5 h-5" />
-      <span>تحميل Excel</span>
-    </button>
+          {user?.role === "admin" && (
+            <div className="flex gap-3">
+              <button
+                onClick={exportCourseStudents}
+                className="flex items-center gap-2 bg-amber-600 text-white px-6 py-3 rounded-lg hover:bg-amber-700 transition shadow-md"
+              >
+                <BookOpen className="w-5 h-5" />
+                <span>تحميل Excel</span>
+              </button>
 
-    {user?.role === "admin" ? (
-      <button
-        onClick={openCreateModal}
-        className="flex items-center gap-2 bg-stone-800 text-white px-6 py-3 rounded-lg hover:bg-stone-900 transition shadow-md"
-      >
-        <Plus className="w-5 h-5" />
-        <span>إضافة مستوى</span>
-      </button>
-    ) : (
-      <div className="flex items-center gap-2 px-6 py-3 rounded-lg border border-stone-200 text-stone-700 bg-stone-100">
-        <BookOpen className="w-5 h-5 opacity-100" />
-        <span>عرض المستويات المتاحة</span>
-      </div>
-    )}
-  </div>
-</div>
+              <button
+                onClick={openCreateModal}
+                className="flex items-center gap-2 bg-stone-800 text-white px-6 py-3 rounded-lg hover:bg-stone-900 transition shadow-md"
+              >
+                <Plus className="w-5 h-5" />
+                <span>إضافة مستوى</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {levels.length === 0 ? (
@@ -456,7 +463,6 @@ export default function Levels() {
               <Plus className="w-5 h-5" />
               <span>إضافة مستوى جديد</span>
             </button>
-            
           ) : (
             <div className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-stone-200 text-stone-700 bg-stone-100">
               <BookOpen className="w-5 h-5 opacity-100" />
