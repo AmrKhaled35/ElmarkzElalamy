@@ -93,9 +93,7 @@ export default function Levels() {
       while (hasMore) {
         const response = await studentsAPI.getAllByCourse(courseId, page);
         const data = response.data;
-
         allStudents = [...allStudents, ...data.results];
-
         if (data.next) {
           page++;
         } else {
@@ -114,75 +112,54 @@ export default function Levels() {
       });
 
       worksheet.columns = [
-        { key: "full_name", width: 40 },
-        { key: "level_name", width: 30 },
-        { key: "activity", width: 18 },
-        { key: "oral", width: 18 },
-        { key: "written", width: 18 },
-        { key: "total", width: 18 },
-        { key: "grade", width: 22 },
-        { key: "result", width: 18 },
+        { key: "full_name",   width: 52 },
+        { key: "level_name",  width: 36 },
+        { key: "activity",    width: 22 },
+        { key: "oral",        width: 22 },
+        { key: "written",     width: 22 },
+        { key: "total",       width: 22 },
+        { key: "grade",       width: 28 },
+        { key: "result",      width: 22 },
       ];
 
       const thinBorder = {
-        top: {
-          style: "thin" as ExcelJS.BorderStyle,
-          color: { argb: "FFC8A564" },
-        },
-        bottom: {
-          style: "thin" as ExcelJS.BorderStyle,
-          color: { argb: "FFC8A564" },
-        },
-        left: {
-          style: "thin" as ExcelJS.BorderStyle,
-          color: { argb: "FFC8A564" },
-        },
-        right: {
-          style: "thin" as ExcelJS.BorderStyle,
-          color: { argb: "FFC8A564" },
-        },
+        top:    { style: "thin" as ExcelJS.BorderStyle, color: { argb: "FFC8A564" } },
+        bottom: { style: "thin" as ExcelJS.BorderStyle, color: { argb: "FFC8A564" } },
+        left:   { style: "thin" as ExcelJS.BorderStyle, color: { argb: "FFC8A564" } },
+        right:  { style: "thin" as ExcelJS.BorderStyle, color: { argb: "FFC8A564" } },
       };
 
+      // ── Title row ──
       worksheet.mergeCells("A1:H1");
       const titleCell = worksheet.getCell("A1");
       titleCell.value = `طلاب ${courseName}`;
       titleCell.font = {
         name: "Times New Roman",
         bold: true,
-        size: 30,
+        size: 34,
         color: { argb: "FFFDF8EB" },
       };
       titleCell.fill = {
         type: "pattern",
         pattern: "solid",
-        fgColor: { argb: "FF8B5A2B" },
+        fgColor: { argb: "FF6B3A10" },
       };
       titleCell.alignment = {
         horizontal: "center",
         vertical: "middle",
         readingOrder: "rtl",
       };
-      worksheet.getRow(1).height = 50;
+      worksheet.getRow(1).height = 60;
 
-      const headers = [
-        "الاسم",
-        "المستوى",
-        "النشاط",
-        "الشفوي",
-        "التحريري",
-        "المجموع",
-        "التقدير",
-        "النتيجة",
-      ];
-
+      // ── Header row ──
+      const headers = ["الاسم", "المستوى", "النشاط", "الشفوي", "التحريري", "المجموع", "التقدير", "النتيجة"];
       const headerRow = worksheet.addRow(headers);
-      headerRow.height = 38;
-
+      headerRow.height = 46;
       headerRow.eachCell((cell) => {
         cell.font = {
           name: "Times New Roman",
           bold: true,
-          size: 20,
+          size: 22,
           color: { argb: "FFFDF8EB" },
         };
         cell.fill = {
@@ -198,7 +175,41 @@ export default function Levels() {
         cell.border = thinBorder;
       });
 
-      allStudents.forEach((s, index) => {
+      // ── Level color pairs [light, slightly darker] ──
+      const levelColorPairs: [string, string][] = [
+        ["FFFFF8E8", "FFF5ECD0"],  // كريمي ذهبي
+        ["FFE8F4FD", "FFD0E8F8"],  // أزرق سماوي
+        ["FFE8F5E9", "FFD0ECD2"],  // أخضر نعناعي
+        ["FFFFF0E0", "FFFFE0C0"],  // برتقالي خوخي
+        ["FFEDE7F6", "FFDDD0F0"],  // بنفسجي لافندر
+        ["FFFDE8EC", "FFFFD0D8"],  // وردي فاتح
+        ["FFE0F7F4", "FFC8EEE8"],  // تيل نعناعي
+        ["FFFFFDE8", "FFFFF0C0"],  // أصفر ليموني
+        ["FFFFE8F0", "FFFFD0E4"],  // فوشيا فاتح
+        ["FFE8F0FE", "FFD0E0FC"],  // أزرق ملكي فاتح
+        ["FFECFDF5", "FFD4F8E8"],  // أخضر زمردي فاتح
+        ["FFFFF3E8", "FFFFE4C8"],  // عنبري دافئ
+        ["FFF3E8FD", "FFE4D0FA"],  // أرجواني فاتح
+        ["FFE8FDFF", "FFD0F8FF"],  // سماوي جليدي
+        ["FFFDFFE8", "FFF8FFD0"],  // أخضر ليموني
+        ["FFFFE8E8", "FFFFD0D0"],  // أحمر وردي فاتح
+      ];
+
+      const levelIndexMap = new Map<string, number>();
+      let levelCounter = 0;
+
+      // ── Data rows ──
+      allStudents.forEach((s) => {
+        if (!levelIndexMap.has(s.level_name)) {
+          levelIndexMap.set(s.level_name, levelCounter % levelColorPairs.length);
+          levelCounter++;
+        }
+
+        const colorPair = levelColorPairs[levelIndexMap.get(s.level_name)!];
+        // نفس المستوى: صفوف متعاقبة بلونين متقاربين
+        const rowIndex = worksheet.rowCount;
+        const fillColor = rowIndex % 2 === 0 ? colorPair[0] : colorPair[1];
+
         const row = worksheet.addRow([
           s.full_name,
           s.level_name,
@@ -209,8 +220,7 @@ export default function Levels() {
           s.grade,
           s.result,
         ]);
-
-        const fillColor = index % 2 === 0 ? "FFFDF8EB" : "FFF5EBD2";
+        row.height = 38;
 
         row.eachCell((cell, colNumber) => {
           cell.fill = {
@@ -223,18 +233,55 @@ export default function Levels() {
             vertical: "middle",
             readingOrder: "rtl",
           };
-          cell.font = { name: "Times New Roman", size: 16, bold: true };
+          cell.font = {
+            name: "Times New Roman",
+            size: 18,
+            bold: true,
+            color: { argb: "FF3A2008" },
+          };
           cell.border = thinBorder;
 
+          // عمود الاسم: محاذاة يمين وحجم أكبر
           if (colNumber === 1) {
-            cell.alignment = { horizontal: "right", vertical: "middle" };
+            cell.alignment = {
+              horizontal: "center",
+              vertical: "middle",
+              readingOrder: "rtl",
+            };
+            cell.font = {
+              name: "Times New Roman",
+              size: 20,
+              bold: true,
+              color: { argb: "FF3A2008" },
+            };
           }
 
+          // عمود المجموع: بولد أكبر
+          if (colNumber === 6) {
+            cell.font = {
+              name: "Times New Roman",
+              size: 20,
+              bold: true,
+              color: { argb: "FF3A2008" },
+            };
+          }
+
+          // عمود النتيجة: ملون
           if (colNumber === 8) {
             if (s.result === "راسب" || s.result === "غائب") {
-              cell.font = { ...cell.font, color: { argb: "FFC81E1E" } };
+              cell.font = {
+                name: "Times New Roman",
+                size: 18,
+                bold: true,
+                color: { argb: "FFC81E1E" },
+              };
             } else if (s.result === "ناجح") {
-              cell.font = { ...cell.font, color: { argb: "FF1E8240" } };
+              cell.font = {
+                name: "Times New Roman",
+                size: 18,
+                bold: true,
+                color: { argb: "FF1E8240" },
+              };
             }
           }
         });
@@ -244,13 +291,13 @@ export default function Levels() {
       const blob = new Blob([buffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `طلاب_${courseName}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
+
     } catch (error) {
       console.error("Export failed:", error);
     } finally {

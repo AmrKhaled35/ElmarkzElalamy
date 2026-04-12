@@ -189,124 +189,198 @@ export default function Students() {
   };
 
   const exportToPDF = async () => {
-    if (!levelId) return;
+  if (!levelId) return;
+  setExporting(true);
 
-    setExporting(true);
-    try {
-      if (studentPDF && studentPDF.length > 0) {
-        const pdf = new jsPDF("l", "mm", "a4");
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        pdf.addFileToVFS("Amiri-Regular.ttf", amiriRegular);
-        pdf.addFont("Amiri-Regular.ttf", "Amiri", "normal");
-        if (typeof amiriBold !== "undefined") {
-          pdf.addFileToVFS("Amiri-Bold.ttf", amiriBold);
-          pdf.addFont("Amiri-Bold.ttf", "Amiri", "bold");
-        }
-        pdf.setFillColor(253, 248, 235);
-        pdf.rect(0, 0, pageWidth, pageHeight, "F");
-        pdf.setDrawColor(139, 90, 43);
-        pdf.setLineWidth(1.2);
-        pdf.rect(4, 4, pageWidth - 8, pageHeight - 8);
-        pdf.setLineWidth(0.4);
-        pdf.rect(6, 6, pageWidth - 12, pageHeight - 12);
-        pdf.setDrawColor(180, 130, 60);
-        pdf.setLineWidth(0.6);
-        pdf.setFillColor(139, 90, 43);
-        pdf.roundedRect(pageWidth / 2 - 60, 8, 120, 8, 2, 2, "F");
-        pdf.setFont("Amiri", "bold");
-        pdf.setFontSize(22);
-        pdf.setTextColor(253, 248, 235);
-        pdf.text("كشف درجات الطلاب", pageWidth / 2, 13.5, { align: "center" });
-
-        pdf.setFont("Amiri", "bold");
-        pdf.setFontSize(32);
-        pdf.setTextColor(80, 40, 10);
-        pdf.text(levelName, pageWidth / 2, 27, { align: "center" });
-
-        autoTable(pdf, {
-          startY: 40,
-          head: [
-            [
-              "النتيجة",
-              "التقدير",
-              "المجموع",
-              "التحريري",
-              "الشفوي",
-              "النشاط",
-              "المستوى",
-              "الاسم",
-            ],
-          ],
-          body: studentPDF.map((s) => [
-            s.result,
-            s.grade,
-            s.total,
-            s.written || 0,
-            s.oral || 0,
-            s.activity || 0,
-            s.level_name,
-            s.full_name,
-          ]),
-          theme: "grid",
-          styles: {
-            font: "Amiri",
-            fontSize: 14,
-            halign: "right",
-            valign: "middle",
-            cellPadding: { top: 4, bottom: 4, left: 5, right: 5 },
-            lineColor: [200, 165, 100],
-            lineWidth: 0.3,
-            textColor: [50, 30, 10],
-            fillColor: [253, 248, 235],
-          },
-          headStyles: {
-            fillColor: [139, 90, 43],
-            textColor: [253, 248, 235],
-            fontStyle: "bold",
-            halign: "center",
-            fontSize: 11,
-            cellPadding: { top: 5, bottom: 5, left: 5, right: 5 },
-          },
-          alternateRowStyles: {
-            fillColor: [245, 235, 210],
-          },
-          didParseCell(data) {
-            if (data.section === "body" && data.column.index === 0) {
-              const val = String(data.cell.raw ?? "").trim();
-              if (val === "راسب" || val === "غائب") {
-                data.cell.styles.textColor = [200, 30, 30];
-                data.cell.styles.fontStyle = "bold";
-              } else if (val === "ناجح") {
-                data.cell.styles.textColor = [30, 130, 60];
-                data.cell.styles.fontStyle = "bold";
-              }
-            }
-          },
-          didDrawPage(data) {
-            pdf.setFont("Amiri", "normal");
-            pdf.setFontSize(16);
-            pdf.setTextColor(139, 90, 43);
-            pdf.text(
-              `صفحة ${data.pageNumber}`,
-              pageWidth / 2,
-              pageHeight - 10,
-              { align: "center" }
-            );
-          },
-          margin: { top: 40, left: 10, right: 10, bottom: 12 },
-        });
-
-        pdf.save(`${levelName}_تقرير.pdf`);
-      } else {
-        console.warn("No PDF data available!");
-      }
-    } catch (error) {
-      console.error("Failed to export PDF:", error);
-    } finally {
-      setExporting(false);
+  try {
+    if (!studentPDF || studentPDF.length === 0) {
+      console.warn("No PDF data available!");
+      return;
     }
-  };
+
+    const pdf = new jsPDF("l", "mm", "a4");
+    const W = pdf.internal.pageSize.getWidth();   // 297mm
+    const H = pdf.internal.pageSize.getHeight();  // 210mm
+
+    // ── Fonts ────────────────────────────────────────
+    pdf.addFileToVFS("Amiri-Regular.ttf", amiriRegular);
+    pdf.addFont("Amiri-Regular.ttf", "Amiri", "normal");
+    if (amiriBold) {
+      pdf.addFileToVFS("Amiri-Bold.ttf", amiriBold);
+      pdf.addFont("Amiri-Bold.ttf", "Amiri", "bold");
+    }
+
+    // ── Background ───────────────────────────────────
+    pdf.setFillColor(250, 247, 240);
+    pdf.rect(0, 0, W, H, "F");
+
+    // ── Border: single elegant frame ─────────────────
+    pdf.setDrawColor(139, 90, 43);
+    pdf.setLineWidth(0.8);
+    pdf.rect(6, 6, W - 12, H - 12);
+
+    // ── Header bar ───────────────────────────────────
+    pdf.setFillColor(101, 62, 22);
+    pdf.rect(6, 6, W - 12, 18, "F");
+
+    pdf.setFont("Amiri", "bold");
+    pdf.setFontSize(20);
+    pdf.setTextColor(253, 245, 228);
+    pdf.text("كشف درجات الطلاب", W / 2, 17, { align: "center" });
+
+    // ── Level name ───────────────────────────────────
+    pdf.setFont("Amiri", "bold");
+    pdf.setFontSize(26);
+    pdf.setTextColor(80, 45, 10);
+    pdf.text(levelName, W / 2, 33, { align: "center" });
+
+
+    // // ── Decorative line under level name ─────────────
+    // const lineW = 80;
+    // pdf.setDrawColor(180, 130, 60);
+    // pdf.setLineWidth(0.4);
+    // pdf.line(W / 2 - lineW, 37, W / 2 + lineW, 37);
+
+
+    // ── Stats summary row ────────────────────────────
+    const passed  = studentPDF.filter(s => s.result === "ناجح").length;
+    const failed  = studentPDF.filter(s => s.result === "راسب").length;
+    const absent  = studentPDF.filter(s => s.result === "غائب").length;
+    const total   = studentPDF.length;
+    const avgScore = total > 0
+      ? (studentPDF.reduce((a, s) => a + s.total, 0) / total).toFixed(1)
+      : "0";
+
+    const stats = [
+      { label: "إجمالي الطلاب", value: String(total) },
+      { label: "الناجحون",       value: String(passed), color: [30, 130, 60] },
+      { label: "الراسبون",       value: String(failed), color: [200, 30, 30] },
+      { label: "متوسط الدرجات", value: avgScore },
+    ];
+
+    const cardW = (270 - 8 * 3) / 4;
+    const cardX0 = (W - 270) / 2;
+    const cardY = 41;
+
+
+    stats.forEach((s, i) => {
+      const cx = cardX0 + i * (cardW + 8);
+      pdf.setFillColor(244, 234, 210);
+      pdf.roundedRect(cx, cardY, cardW, 16, 2, 2, "F");
+      pdf.setDrawColor(200, 165, 100);
+      pdf.setLineWidth(0.3);
+      pdf.roundedRect(cx, cardY, cardW, 16, 2, 2, "D");
+
+      const [r, g, b] = s.color ?? [80, 45, 10];
+      pdf.setFont("Amiri", "bold");
+      pdf.setFontSize(12);
+      pdf.setTextColor(r, g, b);
+      pdf.text(s.value, cx + cardW / 2, cardY + 6.5, { align: "center" });
+
+      pdf.setFont("Amiri", "bold");
+      pdf.setFontSize(16);
+      pdf.setTextColor(120, 90, 50);
+      pdf.text(s.label, cx + cardW / 2, cardY + 12.5, { align: "center" });
+    });
+
+    // ── Main table ───────────────────────────────────
+    autoTable(pdf, {
+      startY: 62,
+      head: [[
+        "النتيجة", "التقدير", "المجموع",
+        "التحريري", "الشفوي", "النشاط",
+         "الاسم الكامل",
+      ]],
+      body: studentPDF.map(s => [
+        s.result,
+        s.grade,
+        s.total,
+        s.written  ?? 0,
+        s.oral     ?? 0,
+        s.activity ?? 0,
+        s.full_name,
+      ]),
+      theme: "grid",
+      styles: {
+        font:        "Amiri",
+        fontSize:    20,
+        halign:      "center",
+        valign:      "middle",
+        cellPadding: { top: 3.5, bottom: 3.5, left: 4, right: 4 },
+        lineColor:   [210, 175, 115],
+        lineWidth:   0.25,
+        textColor:   [55, 35, 12],
+        fillColor:   [253, 249, 240],
+        minCellHeight: 10,
+      },
+      headStyles: {
+        fillColor:   [101, 62, 22],
+        textColor:   [253, 245, 228],
+        fontStyle:   "bold",
+        halign:      "center",
+        fontSize:    13,
+        cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
+        cellWidth: "wrap",
+        overflow: "linebreak",
+      },
+      alternateRowStyles: {
+        fillColor: [245, 234, 210],
+      },
+      columnStyles: {
+        7: { halign: "right", fontStyle: "bold" }, // الاسم بس محاذاة يمين
+        2: { fontStyle: "bold" }, // المجموع بولد بس
+      },
+      didParseCell(data) {
+        if (data.section === "body" && data.column.index === 0) {
+          const val = String(data.cell.raw ?? "").trim();
+          if (val === "راسب" || val === "غائب") {
+            data.cell.styles.textColor  = [185, 25, 25];
+            data.cell.styles.fontStyle  = "bold";
+            data.cell.styles.fillColor  = [255, 235, 235];
+          } else if (val === "ناجح") {
+            data.cell.styles.textColor  = [25, 120, 55];
+            data.cell.styles.fontStyle  = "bold";
+            data.cell.styles.fillColor  = [230, 250, 235];
+          }
+        }
+      },
+      didDrawPage(data) {
+        // Re-draw border on every page
+        pdf.setDrawColor(139, 90, 43);
+        pdf.setLineWidth(0.8);
+        pdf.rect(6, 6, W - 12, H - 12);
+
+        // Footer
+        pdf.setFont("Amiri", "normal");
+        pdf.setFontSize(9);
+        pdf.setTextColor(160, 120, 70);
+        pdf.text(
+          `صفحة ${data.pageNumber}`,
+          W / 2, H - 9,
+          { align: "center" }
+        );
+        // Footer line
+        pdf.setDrawColor(200, 165, 100);
+        pdf.setLineWidth(0.3);
+        pdf.line(12, H - 13, W - 12, H - 13);
+      },
+      margin: { top: 62, left: 8, right: 8, bottom: 15 },
+    });
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString("ar-EG", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    pdf.save(`${levelName}_تقرير_${dateStr.replace(/\//g, "-")}.pdf`);
+
+  } catch (error) {
+    console.error("Failed to export PDF:", error);
+  } finally {
+    setExporting(false);
+  }
+};
 
   const exportToExcel = async () => {
     if (!levelId) return;
