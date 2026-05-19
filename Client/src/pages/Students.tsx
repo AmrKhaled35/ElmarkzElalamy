@@ -24,6 +24,8 @@ interface Student {
   id: number;
   full_name: string;
   level_name: string;
+  serial_number?: string | number;
+  expenses?: number | null;
   activity?: number;
   oral?: number;
   written?: number;
@@ -45,6 +47,8 @@ export default function Students() {
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [formData, setFormData] = useState({
     full_name: "",
+    serial_number: "",
+    expenses: 0,
     activity: 0,
     oral: 0,
     written: 0,
@@ -111,14 +115,23 @@ export default function Students() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const serialNumber = formData.serial_number.trim();
+    const payload = {
+      full_name: formData.full_name,
+      activity: formData.activity,
+      oral: formData.oral,
+      written: formData.written,
+      expenses: formData.expenses,
+      ...(serialNumber ? { serial_number: serialNumber } : {}),
+    };
     try {
       if (editingStudent) {
-        await studentsAPI.update(editingStudent.id, formData);
+        await studentsAPI.update(editingStudent.id, payload);
       } else {
-        await studentsAPI.create(parseInt(levelId!), formData);
+        await studentsAPI.create(parseInt(levelId!), payload);
       }
       setShowModal(false);
-      setFormData({ full_name: "", activity: 0, oral: 0, written: 0 });
+      setFormData({ full_name: "", serial_number: "", expenses: 0, activity: 0, oral: 0, written: 0 });
       setEditingStudent(null);
       loadStudents(currentPage);
       loadStudentsPDF();
@@ -156,6 +169,8 @@ export default function Students() {
       setEditingStudent(fullStudent);
       setFormData({
         full_name: fullStudent.full_name,
+        serial_number: String(fullStudent.serial_number ?? ""),
+        expenses: fullStudent.expenses ?? 0,
         activity: fullStudent.activity || 0,
         oral: fullStudent.oral || 0,
         written: fullStudent.written || 0,
@@ -178,7 +193,7 @@ export default function Students() {
 
   const openCreateModal = () => {
     setEditingStudent(null);
-    setFormData({ full_name: "", activity: 0, oral: 0, written: 0 });
+    setFormData({ full_name: "", serial_number: "", expenses: 0, activity: 0, oral: 0, written: 0 });
     setShowModal(true);
   };
 
@@ -245,7 +260,6 @@ export default function Students() {
     // ── Stats summary row ────────────────────────────
     const passed  = studentPDF.filter(s => s.result === "ناجح").length;
     const failed  = studentPDF.filter(s => s.result === "راسب").length;
-    const absent  = studentPDF.filter(s => s.result === "غائب").length;
     const total   = studentPDF.length;
     const avgScore = total > 0
       ? (studentPDF.reduce((a, s) => a + s.total, 0) / total).toFixed(1)
@@ -395,6 +409,8 @@ export default function Students() {
         worksheet.columns = [
           { key: "full_name", width: 45 },
           { key: "level_name", width: 27 },
+          { key: "serial_number", width: 20 },
+          { key: "expenses", width: 18 },
           { key: "activity", width: 18 },
           { key: "oral", width: 18 },
           { key: "written", width: 18 },
@@ -404,12 +420,12 @@ export default function Students() {
         ];
 
         const thinBorder = {
-          top: { style: "thin", color: { argb: "FFC8A564" } },
-          bottom: { style: "thin", color: { argb: "FFC8A564" } },
-          left: { style: "thin", color: { argb: "FFC8A564" } },
-          right: { style: "thin", color: { argb: "FFC8A564" } },
+          top: { style: "thin" as ExcelJS.BorderStyle, color: { argb: "FFC8A564" } },
+          bottom: { style: "thin" as ExcelJS.BorderStyle, color: { argb: "FFC8A564" } },
+          left: { style: "thin" as ExcelJS.BorderStyle, color: { argb: "FFC8A564" } },
+          right: { style: "thin" as ExcelJS.BorderStyle, color: { argb: "FFC8A564" } },
         };
-        worksheet.mergeCells("A1:H1");
+        worksheet.mergeCells("A1:J1");
         const titleCell = worksheet.getCell("A1");
         titleCell.value = "كشف درجات الطلاب";
         titleCell.font = {
@@ -426,10 +442,10 @@ export default function Students() {
         titleCell.alignment = {
           horizontal: "center",
           vertical: "middle",
-          readingOrder: "rightToLeft",
+          readingOrder: "rtl",
         };
         worksheet.getRow(1).height = 50;
-        worksheet.mergeCells("A2:H2");
+        worksheet.mergeCells("A2:J2");
         const levelCell = worksheet.getCell("A2");
         levelCell.value = levelName;
         levelCell.font = {
@@ -446,12 +462,14 @@ export default function Students() {
         levelCell.alignment = {
           horizontal: "center",
           vertical: "middle",
-          readingOrder: "rightToLeft",
+          readingOrder: "rtl",
         };
         worksheet.getRow(2).height = 40;
         const headers = [
           "الاسم",
           "المستوى",
+          "رقم الايصال",
+          "المصروفات",
           "النشاط",
           "الشفوي",
           "التحريري",
@@ -476,7 +494,7 @@ export default function Students() {
           cell.alignment = {
             horizontal: "center",
             vertical: "middle",
-            readingOrder: "rightToLeft",
+            readingOrder: "rtl",
           };
           cell.border = thinBorder;
         });
@@ -485,6 +503,8 @@ export default function Students() {
           const rowData = [
             s.full_name,
             s.level_name,
+            s.serial_number ?? "-",
+            s.expenses ?? "-",
             s.activity || 0,
             s.oral || 0,
             s.written || 0,
@@ -506,7 +526,7 @@ export default function Students() {
             cell.alignment = {
               horizontal: "center",
               vertical: "middle",
-              readingOrder: "rightToLeft",
+              readingOrder: "rtl",
             };
             cell.font = { name: "Times New Roman", size: 18, bold: true };
             cell.border = thinBorder;
@@ -514,12 +534,12 @@ export default function Students() {
               cell.alignment = {
                 horizontal: "right",
                 vertical: "middle",
-                readingOrder: "rightToLeft",
+                readingOrder: "rtl",
               };
               cell.font = { name: "Times New Roman", bold: true, size: 18 };
             }
 
-            if (colNumber === 8) {
+            if (colNumber === 10) {
               const val = String(s.result).trim();
               if (val === "راسب" || val === "غائب") {
                 cell.font = {
@@ -595,10 +615,11 @@ export default function Students() {
                 <>
                   <button
                     onClick={() => setShowExportMenu(!showExportMenu)}
-                    className="flex items-center gap-2 bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-amber-600 transition"
+                    disabled={exporting}
+                    className="flex items-center gap-2 bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-amber-600 transition disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <FileDown className="w-5 h-5" />
-                    <span>تصدير</span>
+                    <span>{exporting ? "جاري التصدير..." : "تصدير"}</span>
                   </button>
 
                   {showExportMenu && (
@@ -608,7 +629,8 @@ export default function Students() {
                           setShowExportMenu(false);
                           exportToPDF();
                         }}
-                        className="w-full text-right px-4 py-3 hover:bg-stone-100 transition"
+                        disabled={exporting}
+                        className="w-full text-right px-4 py-3 hover:bg-stone-100 transition disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         📄 تصدير PDF
                       </button>
@@ -618,7 +640,8 @@ export default function Students() {
                           setShowExportMenu(false);
                           exportToExcel();
                         }}
-                        className="w-full text-right px-4 py-3 hover:bg-stone-100 transition"
+                        disabled={exporting}
+                        className="w-full text-right px-4 py-3 hover:bg-stone-100 transition disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         📊 تصدير Excel
                       </button>
@@ -676,6 +699,12 @@ export default function Students() {
                       </h3>
                       <p className="text-sm text-stone-500 mt-1">
                         {student.level_name}
+                      </p>
+                      <p className="text-xs text-stone-500 mt-1">
+                        رقم الايصال: {student.serial_number ?? "-"}
+                      </p>
+                      <p className="text-xs text-stone-500">
+                        المصروفات: {student.expenses ?? "-"}
                       </p>
                     </div>
                   </div>
@@ -740,6 +769,12 @@ export default function Students() {
                     المستوى
                   </th>
                   <th className="text-right px-6 py-4 text-sm font-medium text-stone-700">
+                    رقم الايصال
+                  </th>
+                  <th className="text-right px-6 py-4 text-sm font-medium text-stone-700">
+                    المصروفات
+                  </th>
+                  <th className="text-right px-6 py-4 text-sm font-medium text-stone-700">
                     الدرجة الكلية
                   </th>
                   <th className="text-right px-6 py-4 text-sm font-medium text-stone-700">
@@ -772,6 +807,12 @@ export default function Students() {
                     </td>
                     <td className="px-6 py-4 text-stone-600">
                       {student.level_name}
+                    </td>
+                    <td className="px-6 py-4 text-stone-600">
+                      {student.serial_number ?? "-"}
+                    </td>
+                    <td className="px-6 py-4 text-stone-600">
+                      {student.expenses ?? "-"}
                     </td>
                     <td className="px-6 py-4">
                       <span className="font-bold text-stone-800">
@@ -857,6 +898,41 @@ export default function Students() {
 
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-2">
+                  رقم الايصال
+                </label>
+                <input
+                  type="text"
+                  value={formData.serial_number}
+                  onChange={(e) =>
+                    setFormData({ ...formData, serial_number: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  placeholder="أدخل رقم الايصال"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">
+                  المصروفات
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.expenses}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      expenses: Number(e.target.value) || 0,
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  placeholder="أدخل المصروفات"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">
                   درجة النشاط (من 40)
                 </label>
                 <input
@@ -926,6 +1002,8 @@ export default function Students() {
                     setEditingStudent(null);
                     setFormData({
                       full_name: "",
+                      serial_number: "",
+                      expenses: 0,
                       activity: 0,
                       oral: 0,
                       written: 0,
@@ -958,6 +1036,22 @@ export default function Students() {
                     {selectedStudent.full_name}
                   </h3>
                   <p className="text-stone-600">{selectedStudent.level_name}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-stone-50 p-4 rounded-lg">
+                  <p className="text-sm text-stone-600 mb-1">رقم الايصال</p>
+                  <p className="text-2xl font-bold text-stone-800">
+                    {selectedStudent.serial_number ?? "-"}
+                  </p>
+                </div>
+
+                <div className="bg-stone-50 p-4 rounded-lg">
+                  <p className="text-sm text-stone-600 mb-1">المصروفات</p>
+                  <p className="text-2xl font-bold text-stone-800">
+                    {selectedStudent.expenses ?? "-"}
+                  </p>
                 </div>
               </div>
 
