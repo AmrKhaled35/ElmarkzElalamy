@@ -78,6 +78,8 @@ export default function Levels() {
       type Student = {
         full_name: string;
         level_name: string;
+        serial_number?: string | number;
+        expenses?: number | null;
         activity?: number;
         oral?: number;
         written?: number;
@@ -114,6 +116,8 @@ export default function Levels() {
       worksheet.columns = [
         { key: "full_name",   width: 52 },
         { key: "level_name",  width: 36 },
+        { key: "serial_number", width: 20 },
+        { key: "expenses", width: 18 },
         { key: "activity",    width: 22 },
         { key: "oral",        width: 22 },
         { key: "written",     width: 22 },
@@ -130,7 +134,7 @@ export default function Levels() {
       };
 
       // ── Title row ──
-      worksheet.mergeCells("A1:H1");
+      worksheet.mergeCells("A1:J1");
       const titleCell = worksheet.getCell("A1");
       titleCell.value = `طلاب ${courseName}`;
       titleCell.font = {
@@ -152,7 +156,18 @@ export default function Levels() {
       worksheet.getRow(1).height = 60;
 
       // ── Header row ──
-      const headers = ["الاسم", "المستوى", "النشاط", "الشفوي", "التحريري", "المجموع", "التقدير", "النتيجة"];
+      const headers = [
+        "الاسم",
+        "المستوى",
+        "رقم الايصال",
+        "المصروفات",
+        "النشاط",
+        "الشفوي",
+        "التحريري",
+        "المجموع",
+        "التقدير",
+        "النتيجة",
+      ];
       const headerRow = worksheet.addRow(headers);
       headerRow.height = 46;
       headerRow.eachCell((cell) => {
@@ -213,6 +228,8 @@ export default function Levels() {
         const row = worksheet.addRow([
           s.full_name,
           s.level_name,
+          s.serial_number ?? "-",
+          s.expenses ?? "-",
           s.activity ?? 0,
           s.oral ?? 0,
           s.written ?? 0,
@@ -257,7 +274,7 @@ export default function Levels() {
           }
 
           // عمود المجموع: بولد أكبر
-          if (colNumber === 6) {
+          if (colNumber === 8) {
             cell.font = {
               name: "Times New Roman",
               size: 20,
@@ -267,7 +284,7 @@ export default function Levels() {
           }
 
           // عمود النتيجة: ملون
-          if (colNumber === 8) {
+          if (colNumber === 10) {
             if (s.result === "راسب" || s.result === "غائب") {
               cell.font = {
                 name: "Times New Roman",
