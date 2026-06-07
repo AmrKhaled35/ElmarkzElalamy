@@ -302,6 +302,58 @@ export default function Levels() {
         });
       });
 
+      const totalExpenses = allStudents.reduce(
+        (sum, student) => sum + (Number(student.expenses) || 0),
+        0
+      );
+      const totalBooksPrice = allStudents.reduce(
+        (sum, student) => sum + (Number(student.book_price) || 0),
+        0
+      );
+
+      const summaryRow = worksheet.addRow([
+        "الإجمالي",
+        "",
+        "",
+        totalExpenses,
+        "",
+        totalBooksPrice,
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+      ]);
+      summaryRow.height = 40;
+      summaryRow.eachCell((cell, colNumber) => {
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFE7D4AA" },
+        };
+        cell.alignment = {
+          horizontal: "center",
+          vertical: "middle",
+          readingOrder: "rtl",
+        };
+        cell.font = {
+          name: "Times New Roman",
+          size: 20,
+          bold: true,
+          color: { argb: "FF3A2008" },
+        };
+        cell.border = thinBorder;
+
+        if (colNumber === 1) {
+          cell.alignment = {
+            horizontal: "right",
+            vertical: "middle",
+            readingOrder: "rtl",
+          };
+        }
+      });
+
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -493,10 +545,11 @@ export default function Levels() {
             <div className="flex gap-3">
               <button
                 onClick={exportCourseStudents}
-                className="flex items-center gap-2 bg-amber-600 text-white px-6 py-3 rounded-lg hover:bg-amber-700 transition shadow-md"
+                disabled={exporting}
+                className="flex items-center gap-2 bg-amber-600 text-white px-6 py-3 rounded-lg hover:bg-amber-700 transition shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <BookOpen className="w-5 h-5" />
-                <span>تحميل Excel</span>
+                <span>{exporting ? "جاري التحميل..." : "تحميل Excel"}</span>
               </button>
 
               <button

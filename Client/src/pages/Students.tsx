@@ -577,6 +577,58 @@ export default function Students() {
             }
           });
         });
+
+        const totalExpenses = studentPDF.reduce(
+          (sum, student) => sum + (Number(student.expenses) || 0),
+          0
+        );
+        const totalBooksPrice = studentPDF.reduce(
+          (sum, student) => sum + (Number(student.book_price) || 0),
+          0
+        );
+
+        const summaryRow = worksheet.addRow([
+          "الإجمالي",
+          "",
+          "",
+          totalExpenses,
+          "",
+          totalBooksPrice,
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+        ]);
+        summaryRow.height = 34;
+        summaryRow.eachCell((cell, colNumber) => {
+          cell.border = thinBorder;
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFEBD8B1" },
+          };
+          cell.alignment = {
+            horizontal: "center",
+            vertical: "middle",
+            readingOrder: "rtl",
+          };
+          cell.font = {
+            name: "Times New Roman",
+            size: 19,
+            bold: true,
+            color: { argb: "FF4A2A0B" },
+          };
+
+          if (colNumber === 1) {
+            cell.alignment = {
+              horizontal: "right",
+              vertical: "middle",
+              readingOrder: "rtl",
+            };
+          }
+        });
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
