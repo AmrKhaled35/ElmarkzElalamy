@@ -179,13 +179,13 @@ export const studentsAPI = {
   getAllByCourse: (courseId: string | number, page = 1) =>
     api.get(`/api/student/all/course/${courseId}/?page=${page}`),
 
-  create: (levelId: number, data: { full_name: string; activity: number; oral: number; written: number; serial_number?: string | number; expenses?: number | null }) =>
+  create: (levelId: number, data: { full_name: string; activity: number; oral: number; written: number; serial_number?: string | number; expenses?: number | null; books?: string | number | null; book_price?: number | null }) =>
     api.post(`/api/student/level/${levelId}/`, data),
 
   getById: (id: number) =>
     api.get(`/api/student/${id}/`),
 
-  update: (id: number, data: { full_name?: string; activity?: number; oral?: number; written?: number; serial_number?: string | number; expenses?: number | null }) =>
+  update: (id: number, data: { full_name?: string; activity?: number; oral?: number; written?: number; serial_number?: string | number; expenses?: number | null; books?: string | number | null; book_price?: number | null }) =>
     api.patch(`/api/student/${id}/`, data),
 
   delete: (id: number) =>

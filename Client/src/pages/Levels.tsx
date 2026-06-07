@@ -81,6 +81,8 @@ export default function Levels() {
         level_name: string;
         serial_number?: string | number;
         expenses?: number | null;
+        books?: string | number | null;
+        book_price?: number | null;
         activity?: number;
         oral?: number;
         written?: number;
@@ -108,6 +110,8 @@ export default function Levels() {
         { key: "level_name",  width: 36 },
         { key: "serial_number", width: 20 },
         { key: "expenses", width: 18 },
+        { key: "books", width: 18 },
+        { key: "book_price", width: 18 },
         { key: "activity",    width: 22 },
         { key: "oral",        width: 22 },
         { key: "written",     width: 22 },
@@ -124,7 +128,7 @@ export default function Levels() {
       };
 
       // ── Title row ──
-      worksheet.mergeCells("A1:J1");
+      worksheet.mergeCells("A1:L1");
       const titleCell = worksheet.getCell("A1");
       titleCell.value = `طلاب ${courseName}`;
       titleCell.font = {
@@ -151,6 +155,8 @@ export default function Levels() {
         "المستوى",
         "رقم الايصال",
         "المصروفات",
+        "الكتب",
+        "سعر الكتب",
         "النشاط",
         "الشفوي",
         "التحريري",
@@ -220,6 +226,8 @@ export default function Levels() {
           s.level_name,
           s.serial_number ?? "-",
           s.expenses ?? "-",
+          s.books ?? "-",
+          s.book_price ?? "-",
           s.activity ?? 0,
           s.oral ?? 0,
           s.written ?? 0,
@@ -264,7 +272,7 @@ export default function Levels() {
           }
 
           // عمود المجموع: بولد أكبر
-          if (colNumber === 8) {
+          if (colNumber === 10) {
             cell.font = {
               name: "Times New Roman",
               size: 20,
@@ -274,7 +282,7 @@ export default function Levels() {
           }
 
           // عمود النتيجة: ملون
-          if (colNumber === 10) {
+          if (colNumber === 12) {
             if (s.result === "راسب" || s.result === "غائب") {
               cell.font = {
                 name: "Times New Roman",

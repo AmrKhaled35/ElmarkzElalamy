@@ -27,6 +27,8 @@ interface Student {
   level_name: string;
   serial_number?: string | number;
   expenses?: number | null;
+  books?: string | number | null;
+  book_price?: number | null;
   activity?: number;
   oral?: number;
   written?: number;
@@ -50,6 +52,8 @@ export default function Students() {
     full_name: "",
     serial_number: "",
     expenses: 0,
+    books: "",
+    book_price: 0,
     activity: 0,
     oral: 0,
     written: 0,
@@ -119,13 +123,16 @@ export default function Students() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const serialNumber = formData.serial_number.trim();
+    const booksValue = String(formData.books).trim();
     const payload = {
       full_name: formData.full_name,
       activity: formData.activity,
       oral: formData.oral,
       written: formData.written,
       expenses: formData.expenses,
+      book_price: formData.book_price,
       ...(serialNumber ? { serial_number: serialNumber } : {}),
+      ...(booksValue ? { books: booksValue } : {}),
     };
     try {
       if (editingStudent) {
@@ -134,7 +141,7 @@ export default function Students() {
         await studentsAPI.create(parseInt(levelId!), payload);
       }
       setShowModal(false);
-      setFormData({ full_name: "", serial_number: "", expenses: 0, activity: 0, oral: 0, written: 0 });
+      setFormData({ full_name: "", serial_number: "", expenses: 0, books: "", book_price: 0, activity: 0, oral: 0, written: 0 });
       setEditingStudent(null);
       loadStudents(currentPage);
       loadStudentsPDF();
@@ -174,6 +181,8 @@ export default function Students() {
         full_name: fullStudent.full_name,
         serial_number: String(fullStudent.serial_number ?? ""),
         expenses: fullStudent.expenses ?? 0,
+        books: String(fullStudent.books ?? ""),
+        book_price: fullStudent.book_price ?? 0,
         activity: fullStudent.activity || 0,
         oral: fullStudent.oral || 0,
         written: fullStudent.written || 0,
@@ -196,7 +205,7 @@ export default function Students() {
 
   const openCreateModal = () => {
     setEditingStudent(null);
-    setFormData({ full_name: "", serial_number: "", expenses: 0, activity: 0, oral: 0, written: 0 });
+    setFormData({ full_name: "", serial_number: "", expenses: 0, books: "", book_price: 0, activity: 0, oral: 0, written: 0 });
     setShowModal(true);
   };
 
@@ -414,6 +423,8 @@ export default function Students() {
           { key: "level_name", width: 27 },
           { key: "serial_number", width: 20 },
           { key: "expenses", width: 18 },
+          { key: "books", width: 18 },
+          { key: "book_price", width: 18 },
           { key: "activity", width: 18 },
           { key: "oral", width: 18 },
           { key: "written", width: 18 },
@@ -428,7 +439,7 @@ export default function Students() {
           left: { style: "thin" as ExcelJS.BorderStyle, color: { argb: "FFC8A564" } },
           right: { style: "thin" as ExcelJS.BorderStyle, color: { argb: "FFC8A564" } },
         };
-        worksheet.mergeCells("A1:J1");
+        worksheet.mergeCells("A1:L1");
         const titleCell = worksheet.getCell("A1");
         titleCell.value = "كشف درجات الطلاب";
         titleCell.font = {
@@ -448,7 +459,7 @@ export default function Students() {
           readingOrder: "rtl",
         };
         worksheet.getRow(1).height = 50;
-        worksheet.mergeCells("A2:J2");
+        worksheet.mergeCells("A2:L2");
         const levelCell = worksheet.getCell("A2");
         levelCell.value = levelName;
         levelCell.font = {
@@ -473,6 +484,8 @@ export default function Students() {
           "المستوى",
           "رقم الايصال",
           "المصروفات",
+          "الكتب",
+          "سعر الكتب",
           "النشاط",
           "الشفوي",
           "التحريري",
@@ -508,6 +521,8 @@ export default function Students() {
             s.level_name,
             s.serial_number ?? "-",
             s.expenses ?? "-",
+            s.books ?? "-",
+            s.book_price ?? "-",
             s.activity || 0,
             s.oral || 0,
             s.written || 0,
@@ -542,7 +557,7 @@ export default function Students() {
               cell.font = { name: "Times New Roman", bold: true, size: 18 };
             }
 
-            if (colNumber === 10) {
+            if (colNumber === 12) {
               const val = String(s.result).trim();
               if (val === "راسب" || val === "غائب") {
                 cell.font = {
@@ -709,6 +724,12 @@ export default function Students() {
                       <p className="text-xs text-stone-500">
                         المصروفات: {student.expenses ?? "-"}
                       </p>
+                      <p className="text-xs text-stone-500">
+                        الكتب: {student.books ?? "-"}
+                      </p>
+                      <p className="text-xs text-stone-500">
+                        سعر الكتب: {student.book_price ?? "-"}
+                      </p>
                     </div>
                   </div>
                   <div className="flex gap-1 bg-stone-50 rounded-lg p-1">
@@ -778,6 +799,12 @@ export default function Students() {
                     المصروفات
                   </th>
                   <th className="text-right px-6 py-4 text-sm font-medium text-stone-700">
+                    الكتب
+                  </th>
+                  <th className="text-right px-6 py-4 text-sm font-medium text-stone-700">
+                    سعر الكتب
+                  </th>
+                  <th className="text-right px-6 py-4 text-sm font-medium text-stone-700">
                     الدرجة الكلية
                   </th>
                   <th className="text-right px-6 py-4 text-sm font-medium text-stone-700">
@@ -816,6 +843,12 @@ export default function Students() {
                     </td>
                     <td className="px-6 py-4 text-stone-600">
                       {student.expenses ?? "-"}
+                    </td>
+                    <td className="px-6 py-4 text-stone-600">
+                      {student.books ?? "-"}
+                    </td>
+                    <td className="px-6 py-4 text-stone-600">
+                      {student.book_price ?? "-"}
                     </td>
                     <td className="px-6 py-4">
                       <span className="font-bold text-stone-800">
@@ -936,6 +969,41 @@ export default function Students() {
 
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-2">
+                  الكتب
+                </label>
+                <input
+                  type="text"
+                  value={formData.books}
+                  onChange={(e) =>
+                    setFormData({ ...formData, books: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  placeholder="أدخل الكتب"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">
+                  سعر الكتب
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.book_price}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      book_price: Number(e.target.value) || 0,
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  placeholder="أدخل سعر الكتب"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">
                   درجة النشاط (من 40)
                 </label>
                 <input
@@ -1007,6 +1075,8 @@ export default function Students() {
                       full_name: "",
                       serial_number: "",
                       expenses: 0,
+                      books: "",
+                      book_price: 0,
                       activity: 0,
                       oral: 0,
                       written: 0,
@@ -1054,6 +1124,20 @@ export default function Students() {
                   <p className="text-sm text-stone-600 mb-1">المصروفات</p>
                   <p className="text-2xl font-bold text-stone-800">
                     {selectedStudent.expenses ?? "-"}
+                  </p>
+                </div>
+
+                <div className="bg-stone-50 p-4 rounded-lg">
+                  <p className="text-sm text-stone-600 mb-1">الكتب</p>
+                  <p className="text-2xl font-bold text-stone-800">
+                    {selectedStudent.books ?? "-"}
+                  </p>
+                </div>
+
+                <div className="bg-stone-50 p-4 rounded-lg">
+                  <p className="text-sm text-stone-600 mb-1">سعر الكتب</p>
+                  <p className="text-2xl font-bold text-stone-800">
+                    {selectedStudent.book_price ?? "-"}
                   </p>
                 </div>
               </div>
