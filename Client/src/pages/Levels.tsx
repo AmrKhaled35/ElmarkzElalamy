@@ -15,6 +15,7 @@ import { useAuth } from "../contexts/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
 import Pagination from "../components/Pagination";
 import { studentsAPI } from "../services/api";
+import { fetchAllPaginatedResults } from "../services/api";
 
 interface Level {
   id: number;
@@ -88,20 +89,9 @@ export default function Levels() {
         result: string;
       };
 
-      let allStudents: Student[] = [];
-      let page = 1;
-      let hasMore = true;
-
-      while (hasMore) {
-        const response = await studentsAPI.getAllByCourse(courseId, page);
-        const data = response.data;
-        allStudents = [...allStudents, ...data.results];
-        if (data.next) {
-          page++;
-        } else {
-          hasMore = false;
-        }
-      }
+      const allStudents = await fetchAllPaginatedResults<Student>((page) =>
+        studentsAPI.getAllByCourse(courseId, page)
+      );
 
       if (allStudents.length === 0) {
         console.warn("No data!");

@@ -1,5 +1,12 @@
 import axios from 'axios';
 
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
 const API_BASE_URL = 'https://elmarkzelalamy.pythonanywhere.com';
 
 const api = axios.create({
@@ -56,6 +63,27 @@ export const authAPI = {
 
   getCurrentUser: () =>
     api.get('/api/auth/users/me/'),
+};
+
+export const fetchAllPaginatedResults = async <T>(
+  getPage: (page: number) => Promise<{ data: PaginatedResponse<T> }>
+): Promise<T[]> => {
+  let page = 1;
+  let allResults: T[] = [];
+  let hasMore = true;
+
+  while (hasMore) {
+    const response = await getPage(page);
+    const pageResults = response.data.results || [];
+    allResults = [...allResults, ...pageResults];
+    hasMore = Boolean(response.data.next);
+
+    if (hasMore) {
+      page += 1;
+    }
+  }
+
+  return allResults;
 };
 
 export const teachersAPI = {
