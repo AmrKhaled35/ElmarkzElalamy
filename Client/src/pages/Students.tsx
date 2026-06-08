@@ -962,12 +962,12 @@ export default function Students() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold text-stone-800 mb-6">
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 shadow-2xl">
+            <h2 className="text-2xl font-bold text-stone-800 mb-4 sm:mb-6">
               {editingStudent ? "تعديل بيانات الطالب" : "إضافة طالب جديد"}
             </h2>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-2">
                   الاسم الكامل
@@ -1111,10 +1111,10 @@ export default function Students() {
                 />
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="md:col-span-2 sticky bottom-0 bg-white pt-4 pb-1 border-t border-stone-100 flex gap-3">
                 <button
                   type="submit"
-                  className="flex-1 bg-stone-800 text-white py-2 rounded-lg hover:bg-stone-900 transition"
+                  className="flex-1 bg-stone-800 text-white py-2.5 rounded-lg hover:bg-stone-900 transition"
                 >
                   {editingStudent ? "حفظ التعديلات" : "إضافة الطالب"}
                 </button>
@@ -1134,7 +1134,7 @@ export default function Students() {
                       written: 0,
                     });
                   }}
-                  className="flex-1 bg-stone-200 text-stone-700 py-2 rounded-lg hover:bg-stone-300 transition"
+                  className="flex-1 bg-stone-200 text-stone-700 py-2.5 rounded-lg hover:bg-stone-300 transition"
                 >
                   إلغاء
                 </button>
