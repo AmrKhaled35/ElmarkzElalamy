@@ -48,7 +48,16 @@ export default function Students() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    full_name: string;
+    serial_number: string;
+    expenses: number | string;
+    books: string;
+    book_price: number | string;
+    activity: number | string;
+    oral: number | string;
+    written: number | string;
+  }>({
     full_name: "",
     serial_number: "",
     expenses: 0,
@@ -58,6 +67,18 @@ export default function Students() {
     oral: 0,
     written: 0,
   });
+
+  const handleFocus = (field: "expenses" | "book_price" | "activity" | "oral" | "written") => {
+    if (formData[field] === 0 || formData[field] === "0") {
+      setFormData((prev) => ({ ...prev, [field]: "" }));
+    }
+  };
+
+  const handleBlur = (field: "expenses" | "book_price" | "activity" | "oral" | "written") => {
+    if (formData[field] === "") {
+      setFormData((prev) => ({ ...prev, [field]: 0 }));
+    }
+  };
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -126,11 +147,11 @@ export default function Students() {
     const booksValue = String(formData.books).trim();
     const payload = {
       full_name: formData.full_name,
-      activity: formData.activity,
-      oral: formData.oral,
-      written: formData.written,
-      expenses: formData.expenses,
-      book_price: formData.book_price,
+      activity: Number(formData.activity) || 0,
+      oral: Number(formData.oral) || 0,
+      written: Number(formData.written) || 0,
+      expenses: Number(formData.expenses) || 0,
+      book_price: Number(formData.book_price) || 0,
       ...(serialNumber ? { serial_number: serialNumber } : {}),
       ...(booksValue ? { books: booksValue } : {}),
     };
@@ -1011,9 +1032,11 @@ export default function Students() {
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      expenses: Number(e.target.value) || 0,
+                      expenses: e.target.value,
                     })
                   }
+                  onFocus={() => handleFocus("expenses")}
+                  onBlur={() => handleBlur("expenses")}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   placeholder="أدخل المصروفات"
                 />
@@ -1046,9 +1069,11 @@ export default function Students() {
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      book_price: Number(e.target.value) || 0,
+                      book_price: e.target.value,
                     })
                   }
+                  onFocus={() => handleFocus("book_price")}
+                  onBlur={() => handleBlur("book_price")}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   placeholder="أدخل سعر الكتب"
                 />
@@ -1067,9 +1092,11 @@ export default function Students() {
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      activity: parseInt(e.target.value),
+                      activity: e.target.value,
                     })
                   }
+                  onFocus={() => handleFocus("activity")}
+                  onBlur={() => handleBlur("activity")}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
               </div>
@@ -1085,8 +1112,10 @@ export default function Students() {
                   max="80"
                   value={formData.oral}
                   onChange={(e) =>
-                    setFormData({ ...formData, oral: parseInt(e.target.value) })
+                    setFormData({ ...formData, oral: e.target.value })
                   }
+                  onFocus={() => handleFocus("oral")}
+                  onBlur={() => handleBlur("oral")}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
               </div>
@@ -1104,9 +1133,11 @@ export default function Students() {
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      written: parseInt(e.target.value),
+                      written: e.target.value,
                     })
                   }
+                  onFocus={() => handleFocus("written")}
+                  onBlur={() => handleBlur("written")}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
               </div>
