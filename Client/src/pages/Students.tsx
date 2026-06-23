@@ -20,7 +20,7 @@ import autoTable from "jspdf-autotable";
 import { useAuth } from "../contexts/AuthContext";
 import ExcelJS from "exceljs";
 import Pagination from "../components/Pagination";
-import { fetchAllPaginatedResults } from "../services/api";
+
 interface Student {
   id: number;
   full_name: string;
@@ -130,16 +130,15 @@ export default function Students() {
 
     setLoading(true);
     try {
-      const allStudents = await fetchAllPaginatedResults<Student>((page) =>
-        studentsAPI.getByLevel(parseInt(levelId), page)
-      );
-      setStudentPDF(allStudents);
+      const response = await studentsAPI.getPDF(parseInt(levelId));
+      setStudentPDF(response.data.results ?? response.data ?? []);
     } catch (error) {
       console.error("Failed to load PDF:", error);
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
